@@ -1,0 +1,103 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Definition of the design system. All colors, gradients, fonts, etc should be defined here. 
+All colors MUST be HSL.
+*/
+
+@layer base {
+  :root {
+    --background: 0 0% 100%;
+    --foreground: 210 10% 25%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 210 10% 25%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 210 10% 25%;
+
+    --primary: 16 100% 50%;
+    --primary-foreground: 0 0% 100%;
+
+    --secondary: 210 15% 95%;
+    --secondary-foreground: 210 10% 25%;
+
+    --muted: 210 15% 96%;
+    --muted-foreground: 210 8% 50%;
+
+    --accent: 16 100% 50%;
+    --accent-foreground: 0 0% 100%;
+
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 210 15% 88%;
+    --input: 210 15% 92%;
+    --ring: 16 100% 50%;
+
+    --radius: 0.75rem;
+
+    --success: 142 76% 36%;
+    --warning: 38 92% 50%;
+    --info: 199 89% 48%;
+    
+    --currency: 142 76% 36%;
+
+    --service-excellent: 142 76% 36%;
+    --service-good: 84 81% 44%;
+    --service-moderate: 38 92% 50%;
+    --service-poor: 0 84% 60%;
+
+    --tier-gold: 45 100% 51%;
+    --tier-silver: 0 0% 63%;
+    --tier-bronze: 25 76% 48%;
+
+    --urgent-critical: 0 84% 60%;
+    --urgent-high: 16 100% 50%;
+    --urgent-medium: 38 92% 50%;
+    --urgent-low: 199 89% 48%;
+  }
+
+  .dark {
+    --background: 210 15% 12%;
+    --foreground: 0 0% 95%;
+
+    --card: 210 15% 15%;
+    --card-foreground: 0 0% 95%;
+
+    --popover: 210 15% 15%;
+    --popover-foreground: 0 0% 95%;
+
+    --primary: 16 100% 55%;
+    --primary-foreground: 0 0% 100%;
+
+    --secondary: 210 12% 20%;
+    --secondary-foreground: 0 0% 95%;
+
+    --muted: 210 12% 18%;
+    --muted-foreground: 210 8% 60%;
+
+    --accent: 16 100% 55%;
+    --accent-foreground: 0 0% 100%;
+
+    --destructive: 0 62% 50%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 210 12% 25%;
+    --input: 210 12% 22%;
+    --ring: 16 100% 55%;
+    
+    --currency: 142 76% 45%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground;
+  }
+}

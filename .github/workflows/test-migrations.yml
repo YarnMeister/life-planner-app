@@ -1,0 +1,55 @@
+name: Validate DB Migrations (TEST)
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  test-migrations:
+    runs-on: ubuntu-latest
+    env:
+      DATABASE_URL: ${{ secrets.DATABASE_URL }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install deps
+        run: npm ci
+
+      - name: Ensure DATABASE_URL is available (TEST)
+        run: |
+          if [ -z "${DATABASE_URL}" ]; then
+            echo "DATABASE_URL is not set. Configure a GitHub Actions secret named DATABASE_URL with the TEST database URL." 1>&2
+            exit 1
+          fi
+
+      - name: Lint migrations (guard destructive)
+        run: npm run db:lint:migrations
+
+      - name: Apply migrations to TEST
+        run: npm run db:migrate
+
+      - name: Check migration status
+        run: npm run db:status
+
+      - name: Run RLS harness (can be skipped when initializing)
+        run: npm run db:test-rls
+        env:
+          SKIP_RLS_TESTS: ${{ secrets.SKIP_RLS_TESTS }}
+
+      - name: Audit RLS coverage (fail on gaps; can be skipped when initializing)
+        run: npm run db:audit-rls
+        env:
+          SKIP_RLS_TESTS: ${{ secrets.SKIP_RLS_TESTS }}
+
+      - name: Audit raw SQL (DDL outside migrations)
+        run: npm run db:audit-raw-sql
+
+
