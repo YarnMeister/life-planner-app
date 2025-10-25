@@ -1,7 +1,7 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { z } from 'zod';
-import { eq, and, gte } from 'drizzle-orm';
-import { db, authCodes, users } from '../../src/lib/auth/db';
+import { eq, and, gte, or } from 'drizzle-orm';
+import { db, authCodes, users, failedAuthAttempts } from '../../src/lib/auth/db';
 import { signToken, verifyAuthCode } from '../../src/lib/auth/jwt';
 import { serialize } from 'cookie';
 
@@ -27,30 +27,27 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
-  // Handle preflight requests
-  if (req.method === 'OPTIONS') {
-    return res.status(200).end();
-  }
-
   try {
     const { email, code } = verifySchema.parse(req.body);
-    const _clientIp = getClientIp(req); // Reserved for future IP-based verification logging
+    const clientIp = getClientIp(req);
 
-    // Check for verification attempt abuse (failed attempts)
+    // Check for failed verification attempts (proper lockout logic)
     const lockoutStart = new Date(Date.now() - VERIFY_LOCKOUT_WINDOW);
-    const recentAttempts = await db
+    const recentFailedAttempts = await db
       .select()
-      .from(authCodes)
+      .from(failedAuthAttempts)
       .where(
         and(
-          eq(authCodes.email, email),
-          eq(authCodes.used, false),
-          gte(authCodes.createdAt, lockoutStart)
+          or(
+            eq(failedAuthAttempts.email, email),
+            eq(failedAuthAttempts.ipAddress, clientIp)
+          ),
+          gte(failedAuthAttempts.attemptedAt, lockoutStart)
         )
       );
 
-    // If too many unused codes exist, someone is trying many codes
-    if (recentAttempts.length >= MAX_VERIFY_ATTEMPTS) {
+    // Block if too many failed attempts from this email or IP
+    if (recentFailedAttempts.length >= MAX_VERIFY_ATTEMPTS) {
       return res.status(429).json({
         error: 'Too many failed attempts. Please wait 15 minutes or request a new code.'
       });
@@ -84,6 +81,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     }
 
     if (!matchedCode) {
+      // Log failed verification attempt
+      await db.insert(failedAuthAttempts).values({
+        email,
+        ipAddress: clientIp,
+      });
+
       return res.status(400).json({
         error: 'Invalid or expired authentication code'
       });

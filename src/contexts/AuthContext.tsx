@@ -3,7 +3,7 @@ import { createContext, useContext, useState, useEffect, ReactNode } from 'react
 export interface User {
   id: string;
   email: string;
-  createdAt: Date;
+  createdAt: string; // ISO 8601 string from API
 }
 
 interface AuthContextType {

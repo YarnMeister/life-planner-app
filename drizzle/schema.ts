@@ -27,6 +27,18 @@ export const authCodes = pgTable('auth_codes', {
   used: boolean('used').notNull().default(false),
   createdAt: timestamp('created_at').notNull().default(sql`now()`),
 }, (table) => ({
-  emailIdx: index('auth_codes_email_idx').on(table.email),
-  ipIdx: index('auth_codes_ip_idx').on(table.ipAddress),
+  // Composite indexes for efficient rate-limit queries
+  emailCreatedIdx: index('auth_codes_email_created_idx').on(table.email, table.createdAt),
+  ipCreatedIdx: index('auth_codes_ip_created_idx').on(table.ipAddress, table.createdAt),
+}));
+
+// Track failed authentication attempts for proper lockout
+export const failedAuthAttempts = pgTable('failed_auth_attempts', {
+  id: uuid('id').primaryKey().default(sql`gen_random_uuid()`),
+  email: text('email').notNull(),
+  ipAddress: text('ip_address').notNull(),
+  attemptedAt: timestamp('attempted_at').notNull().default(sql`now()`),
+}, (table) => ({
+  emailAttemptedIdx: index('failed_attempts_email_attempted_idx').on(table.email, table.attemptedAt),
+  ipAttemptedIdx: index('failed_attempts_ip_attempted_idx').on(table.ipAddress, table.attemptedAt),
 }));

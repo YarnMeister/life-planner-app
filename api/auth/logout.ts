@@ -7,11 +7,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
-  // Handle preflight requests
-  if (req.method === 'OPTIONS') {
-    return res.status(200).end();
-  }
-
   try {
     // Clear the auth token cookie
     const isProduction = process.env.NODE_ENV === 'production';
