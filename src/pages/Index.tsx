@@ -1,23 +1,55 @@
-import { Container, Title, Text, Stack, Button, Paper, Group } from '@mantine/core';
-import { IconCode, IconDatabase, IconPalette } from '@tabler/icons-react';
+import { Container, Title, Text, Stack, Button, Paper, Group, Badge } from '@mantine/core';
+import { IconCode, IconDatabase, IconPalette, IconLogout, IconShieldCheck } from '@tabler/icons-react';
 import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../contexts/AuthContext';
 
 const Index = () => {
   const navigate = useNavigate();
+  const { user, logout } = useAuth();
+
+  const handleLogout = async () => {
+    await logout();
+    navigate('/auth/login');
+  };
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-gray-50">
       <Container size="md">
         <Stack gap="xl" align="center">
+          {/* User Info Badge */}
+          <Paper p="md" shadow="sm" radius="md" withBorder w="100%">
+            <Group justify="space-between" align="center">
+              <Group gap="sm">
+                <IconShieldCheck size={20} color="green" />
+                <div>
+                  <Text size="xs" c="dimmed">Logged in as</Text>
+                  <Text size="sm" fw={600}>{user?.email}</Text>
+                </div>
+              </Group>
+              <Button
+                variant="light"
+                color="red"
+                leftSection={<IconLogout size={16} />}
+                onClick={handleLogout}
+              >
+                Logout
+              </Button>
+            </Group>
+          </Paper>
+
           <Paper p="xl" shadow="md" radius="lg" withBorder w="100%">
             <Stack gap="lg" align="center">
+              <Badge size="lg" variant="gradient" gradient={{ from: 'blue', to: 'cyan' }}>
+                🔐 Authentication Enabled
+              </Badge>
+              
               <Title order={1} ta="center" c="blue">
                 React + Vite + Neon Template
               </Title>
               
               <Text size="lg" ta="center" c="dimmed">
                 A production-ready starter template with React, TypeScript, Drizzle ORM, 
-                PostgreSQL, and Mantine UI components.
+                PostgreSQL, Email Auth, and Mantine UI components.
               </Text>
 
               <Group justify="center" mt="md">
