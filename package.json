@@ -29,7 +29,6 @@
   "dependencies": {
     "@hookform/resolvers": "^3.10.0",
     "@mantine/core": "^8.3.5",
-    "@mantine/hooks": "^8.3.5",
     "@mantine/notifications": "^8.3.5",
     "@neondatabase/serverless": "^1.0.2",
     "@tabler/icons-react": "^3.35.0",

@@ -11,6 +11,8 @@ import {
   Alert,
   Paper,
   Divider,
+  useMantineColorScheme,
+  Switch,
 } from '@mantine/core';
 import { 
   IconCheck, 
@@ -18,11 +20,15 @@ import {
   IconAlertCircle,
   IconSend,
   IconUser,
+  IconMoon,
+  IconSun,
 } from '@tabler/icons-react';
 import { useState } from 'react';
 
 const MantineDemo = () => {
   const [inputValue, setInputValue] = useState('');
+  const { colorScheme, setColorScheme } = useMantineColorScheme();
+  const isDark = colorScheme === 'dark';
 
   return (
     <Container size="lg" py="xl">
@@ -37,6 +43,33 @@ const MantineDemo = () => {
             </Text>
           </Stack>
         </Paper>
+
+        {/* Theme Toggle Section */}
+        <Card shadow="sm" padding="lg" radius="md" withBorder>
+          <Stack gap="md">
+            <Title order={2}>Theme Toggle</Title>
+            <Divider />
+            <Text size="sm" c="dimmed" mb="xs">
+              The template supports both light and dark color schemes. Toggle below to see it in action.
+            </Text>
+            <Group>
+              <Switch
+                checked={isDark}
+                onChange={() => setColorScheme(isDark ? 'light' : 'dark')}
+                size="lg"
+                onLabel={<IconMoon size={16} />}
+                offLabel={<IconSun size={16} />}
+                label={isDark ? 'Dark Mode' : 'Light Mode'}
+              />
+            </Group>
+            <Alert icon={<IconInfoCircle size={16} />} color="blue" variant="light">
+              <Text size="sm">
+                This theme toggle demonstrates how to implement dark mode in your app.
+                The color scheme persists across page reloads thanks to the ColorSchemeScript in index.html.
+              </Text>
+            </Alert>
+          </Stack>
+        </Card>
 
         {/* Typography Section */}
         <Card shadow="sm" padding="lg" radius="md" withBorder>
@@ -168,6 +201,9 @@ const MantineDemo = () => {
             </Text>
             <Text>
               To customize the theme colors, edit <code>src/theme/mantine-theme.ts</code>.
+            </Text>
+            <Text>
+              To add dark mode support to your app, use <code>useMantineColorScheme()</code> as shown in the Theme Toggle section above.
             </Text>
             <Text c="dimmed" size="sm">
               📚 Full documentation: <code>/docs/mantine-setup.md</code>
