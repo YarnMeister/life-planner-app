@@ -1,6 +1,6 @@
 # New App Template
 
-A production-ready starter template for building modern web applications with React, TypeScript, Drizzle ORM, and Neon PostgreSQL.
+A production-ready starter template for building modern web applications with React, TypeScript, Drizzle ORM, Neon PostgreSQL, and **passwordless email authentication**.
 
 ## 🚀 Tech Stack
 
@@ -8,9 +8,26 @@ A production-ready starter template for building modern web applications with Re
 - **UI:** Mantine UI + shadcn/ui + Tailwind CSS + Radix UI
 - **Icons:** Tabler Icons
 - **Database:** PostgreSQL (Neon) + Drizzle ORM
+- **Authentication:** Email OTP (Passwordless) with Resend.com
+- **API:** Vercel Serverless Functions
 - **Deployment:** Vercel
 - **Testing:** Vitest + React Testing Library
 - **Package Manager:** npm
+
+---
+
+## 🔐 Authentication
+
+This template includes a **complete email authentication system** with:
+
+- ✅ Passwordless login with 6-digit codes
+- ✅ Email delivery via [Resend.com](https://resend.com)
+- ✅ Secure JWT tokens with HttpOnly cookies
+- ✅ Route protection for authenticated pages
+- ✅ Mock mode for development (no email API required)
+- ✅ Rate limiting and security best practices
+
+**[📖 View Auth Setup Guide](./docs/email-auth-setup-instructions.md)**
 
 ---
 
@@ -82,22 +99,31 @@ Create **at least two databases**:
 
 ### 4. Set Local Environment
 
-Create `.env.local` from `.env.example`:
+Create `.env.local` from `env.example`:
 
 ```bash
-cp .env.example .env.local
+cp env.example .env.local
 ```
 
 Configure the following variables:
 
 ```env
+# Database
 DATABASE_URL=postgresql://user:password@host/dbname?sslmode=require
-# Leave PROD_DATABASE_URL empty locally (only used in Vercel)
 PROD_DATABASE_URL=
+
+# Authentication (Required)
+JWT_SECRET=your-secure-random-string  # Generate with: openssl rand -base64 32
+
+# Email (Optional for development)
+RESEND_API_KEY=re_xxxxxxxxxx  # Get from https://resend.com
+# If not set, auth codes will be logged to console
 
 # Optional: Skip RLS tests for first pipeline run
 # SKIP_RLS_TESTS=1
 ```
+
+> 💡 **Development Tip:** You can develop without `RESEND_API_KEY` - authentication codes will print to the console!
 
 ### 5. Set GitHub Actions Secrets (TEST)
 
@@ -111,8 +137,11 @@ Add:
 
 1. Create a new Vercel project linked to your repository
 2. Go to **Project Settings → Environment Variables**
-3. Add:
-   - `PROD_DATABASE_URL` (Production scope) = Neon PROD connection string
+3. Add (all with Production scope):
+   - `DATABASE_URL` or `PROD_DATABASE_URL` = Neon PROD connection string
+   - `JWT_SECRET` = Your secure JWT secret (use same as local or generate new)
+   - `RESEND_API_KEY` = Your Resend.com API key (required for production)
+   - `NODE_ENV=production`
 4. Ensure Node and build defaults are fine for Vite (they usually are)
 
 ### 7. Initialize Drizzle for Your Domain
@@ -227,27 +256,40 @@ git checkout -b feature/your-feature-name
 ## 🗂️ Project Structure
 
 ```
+├── api/                  # Vercel serverless functions
+│   └── auth/             # Authentication endpoints
 ├── drizzle/              # Database schema and migrations
-│   ├── schema.ts         # Drizzle schema definitions
+│   ├── schema.ts         # Drizzle schema definitions (includes auth tables)
 │   └── migrations/       # Generated SQL migrations
 ├── scripts/              # Database utility scripts
 ├── src/
-│   ├── components/ui/    # shadcn/ui components
+│   ├── components/
+│   │   ├── auth/         # Authentication components
+│   │   └── ui/           # shadcn/ui components
+│   ├── contexts/         # React contexts (AuthContext)
 │   ├── hooks/            # Custom React hooks
-│   ├── lib/              # Utility functions
-│   ├── pages/            # Page components
+│   ├── lib/
+│   │   ├── auth/         # Auth utilities (email, JWT, db)
+│   │   └── utils.ts      # Utility functions
+│   ├── pages/
+│   │   ├── auth/         # Login & verify pages
+│   │   └── ...           # Other pages
 │   ├── theme/            # Mantine theme configuration
 │   └── tests/            # Test files
 ├── public/               # Static assets
 └── docs/                 # Documentation
+    └── email-auth-setup-instructions.md     # Authentication setup guide
 ```
 
 ---
 
 ## 🔒 Security & Best Practices
 
-- ✅ Row Level Security (RLS) audits built-in
-- ✅ Migration linting before apply
+- ✅ **Passwordless authentication** with email OTP codes
+- ✅ **JWT tokens** with HttpOnly cookies
+- ✅ **Rate limiting** to prevent abuse
+- ✅ **Row Level Security (RLS)** audits built-in
+- ✅ **Migration linting** before apply
 - ✅ Separate TEST and PROD databases
 - ✅ No direct commits to main (branch-based workflow)
 - ✅ Environment variable validation
@@ -256,6 +298,8 @@ git checkout -b feature/your-feature-name
 
 ## 📚 Additional Resources
 
+- [Auth Setup Guide](./docs/email-auth-setup-instructions.md) - Complete authentication documentation
+- [Resend Docs](https://resend.com/docs) - Email delivery service
 - [Mantine UI Docs](https://mantine.dev/) - UI component library
 - [Tabler Icons](https://tabler.io/icons) - Icon library
 - [Drizzle ORM Docs](https://orm.drizzle.team/) - Database ORM

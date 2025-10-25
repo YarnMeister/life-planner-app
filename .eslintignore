@@ -1,0 +1,18 @@
+# Build output
+dist
+dist-ssr
+*.local
+
+# Dependencies
+node_modules
+
+# Migration and build scripts (intentionally use CommonJS)
+scripts/*.cjs
+scripts/*.mjs
+
+# Test coverage
+coverage
+
+# Vercel
+.vercel
+
