@@ -278,7 +278,7 @@ git checkout -b feature/your-feature-name
 │   └── tests/            # Test files
 ├── public/               # Static assets
 └── docs/                 # Documentation
-    └── AUTH_SETUP.md     # Authentication setup guide
+    └── email-auth-setup-instructions.md     # Authentication setup guide
 ```
 
 ---
@@ -298,7 +298,7 @@ git checkout -b feature/your-feature-name
 
 ## 📚 Additional Resources
 
-- [Auth Setup Guide](./docs/AUTH_SETUP.md) - Complete authentication documentation
+- [Auth Setup Guide](./docs/email-auth-setup-instructions.md) - Complete authentication documentation
 - [Resend Docs](https://resend.com/docs) - Email delivery service
 - [Mantine UI Docs](https://mantine.dev/) - UI component library
 - [Tabler Icons](https://tabler.io/icons) - Icon library
