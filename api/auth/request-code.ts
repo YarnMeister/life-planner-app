@@ -4,6 +4,7 @@ import { eq, and, gte, or } from 'drizzle-orm';
 import { db, authCodes, users } from '../../src/lib/auth/db';
 import { generateAuthCode, hashAuthCode } from '../../src/lib/auth/jwt';
 import { sendAuthCode } from '../../src/lib/auth/email';
+import { normalizeEmail } from '../../src/lib/auth/utils';
 
 const requestSchema = z.object({
   email: z.string().email('Invalid email address'),
@@ -28,7 +29,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }
 
   try {
-    const { email } = requestSchema.parse(req.body);
+    const { email: rawEmail } = requestSchema.parse(req.body);
+    const email = normalizeEmail(rawEmail);
     const clientIp = getClientIp(req);
 
     // Check rate limiting (both email-based and IP-based)

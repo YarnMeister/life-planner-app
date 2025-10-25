@@ -4,6 +4,7 @@ import { eq, and, gte, or } from 'drizzle-orm';
 import { db, authCodes, users, failedAuthAttempts } from '../../src/lib/auth/db';
 import { signToken, verifyAuthCode } from '../../src/lib/auth/jwt';
 import { serialize } from 'cookie';
+import { normalizeEmail } from '../../src/lib/auth/utils';
 
 const verifySchema = z.object({
   email: z.string().email('Invalid email address'),
@@ -28,7 +29,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }
 
   try {
-    const { email, code } = verifySchema.parse(req.body);
+    const { email: rawEmail, code } = verifySchema.parse(req.body);
+    const email = normalizeEmail(rawEmail);
     const clientIp = getClientIp(req);
 
     // Check for failed verification attempts (proper lockout logic)
