@@ -5,6 +5,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { MantineProvider } from '@mantine/core';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import { Notifications } from '@mantine/notifications';
+import { theme } from '@/theme/mantine-theme';
 
 /**
  * Creates a new QueryClient instance for each test
@@ -43,7 +44,7 @@ function AllTheProviders({ children }: AllTheProvidersProps) {
   const queryClient = createTestQueryClient();
 
   return (
-    <MantineProvider>
+    <MantineProvider theme={theme} defaultColorScheme="light">
       <QueryClientProvider client={queryClient}>
         <TooltipProvider>
           <Notifications />
@@ -123,7 +124,7 @@ function renderWithRouter(
 
   function Wrapper({ children }: { children: ReactNode }) {
     return (
-      <MantineProvider>
+      <MantineProvider theme={theme} defaultColorScheme="light">
         <QueryClientProvider client={queryClient}>
           <TooltipProvider>
             <Notifications />

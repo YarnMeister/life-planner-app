@@ -5,11 +5,47 @@ A production-ready starter template for building modern web applications with Re
 ## 🚀 Tech Stack
 
 - **Frontend:** React 18 + TypeScript + Vite
-- **UI:** shadcn/ui + Tailwind CSS + Radix UI
+- **UI:** Mantine UI + shadcn/ui + Tailwind CSS + Radix UI
+- **Icons:** Tabler Icons
 - **Database:** PostgreSQL (Neon) + Drizzle ORM
 - **Deployment:** Vercel
 - **Testing:** Vitest + React Testing Library
 - **Package Manager:** npm
+
+---
+
+## 🎨 UI Components
+
+This template comes with **Mantine UI** pre-configured with a professional blue theme. Mantine provides:
+
+- 🎯 **100+ Components** - Buttons, forms, modals, tables, and more
+- 🎨 **Customizable Theme** - Easy to adapt to your brand colors
+- ♿ **Accessible** - WCAG compliant components
+- 📱 **Responsive** - Mobile-first design with built-in breakpoints
+- 🔧 **TypeScript** - Full type safety out of the box
+
+**Quick Start:**
+```tsx
+import { Button, TextInput, Card } from '@mantine/core';
+import { IconCheck } from '@tabler/icons-react';
+
+function MyComponent() {
+  return (
+    <Card shadow="sm" padding="lg" radius="md" withBorder>
+      <TextInput label="Email" placeholder="your@email.com" />
+      <Button leftSection={<IconCheck size={16} />}>Submit</Button>
+    </Card>
+  );
+}
+```
+
+📚 **Learn More:**
+- Visit `/mantine-demo` to see all components in action
+- Read the [Mantine Setup Guide](./docs/mantine-setup.md) for customization
+- Browse [Mantine Documentation](https://mantine.dev/)
+
+**Hybrid UI System:**
+This template includes both Mantine UI and shadcn/ui, allowing you to use the best components from each library.
 
 ---
 
@@ -200,6 +236,7 @@ git checkout -b feature/your-feature-name
 │   ├── hooks/            # Custom React hooks
 │   ├── lib/              # Utility functions
 │   ├── pages/            # Page components
+│   ├── theme/            # Mantine theme configuration
 │   └── tests/            # Test files
 ├── public/               # Static assets
 └── docs/                 # Documentation
@@ -219,10 +256,12 @@ git checkout -b feature/your-feature-name
 
 ## 📚 Additional Resources
 
-- [Drizzle ORM Docs](https://orm.drizzle.team/)
-- [Neon Docs](https://neon.tech/docs)
-- [Vercel Docs](https://vercel.com/docs)
-- [shadcn/ui](https://ui.shadcn.com/)
+- [Mantine UI Docs](https://mantine.dev/) - UI component library
+- [Tabler Icons](https://tabler.io/icons) - Icon library
+- [Drizzle ORM Docs](https://orm.drizzle.team/) - Database ORM
+- [Neon Docs](https://neon.tech/docs) - PostgreSQL hosting
+- [Vercel Docs](https://vercel.com/docs) - Deployment platform
+- [shadcn/ui](https://ui.shadcn.com/) - Additional UI components
 
 ---
 
