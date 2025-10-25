@@ -85,6 +85,7 @@ export default function Verify() {
     if (code.length === 6) {
       handleVerify();
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [code]);
 
   if (!email) {

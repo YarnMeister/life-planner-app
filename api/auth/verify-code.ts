@@ -2,7 +2,7 @@ import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { z } from 'zod';
 import { eq, and, gte } from 'drizzle-orm';
 import { db, authCodes, users } from '../../src/lib/auth/db';
-import { signToken } from '../../src/lib/auth/jwt';
+import { signToken, verifyAuthCode } from '../../src/lib/auth/jwt';
 import { serialize } from 'cookie';
 
 const verifySchema = z.object({
@@ -10,40 +10,80 @@ const verifySchema = z.object({
   code: z.string().length(6, 'Code must be 6 digits'),
 });
 
+// Maximum failed verification attempts before temporary lockout
+const MAX_VERIFY_ATTEMPTS = 5;
+const VERIFY_LOCKOUT_WINDOW = 15 * 60 * 1000; // 15 minutes
+
+// Helper to get client IP
+function getClientIp(req: VercelRequest): string {
+  const forwarded = req.headers['x-forwarded-for'];
+  const ip = typeof forwarded === 'string' ? forwarded.split(',')[0] : req.socket?.remoteAddress;
+  return ip || 'unknown';
+}
+
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   // Only allow POST requests
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
-  // Enable CORS
-  res.setHeader('Access-Control-Allow-Credentials', 'true');
-  res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
-
+  // Handle preflight requests
   if (req.method === 'OPTIONS') {
     return res.status(200).end();
   }
 
   try {
     const { email, code } = verifySchema.parse(req.body);
+    const _clientIp = getClientIp(req); // Reserved for future IP-based verification logging
 
-    // Find valid auth code
-    const authCode = await db
+    // Check for verification attempt abuse (failed attempts)
+    const lockoutStart = new Date(Date.now() - VERIFY_LOCKOUT_WINDOW);
+    const recentAttempts = await db
       .select()
       .from(authCodes)
       .where(
         and(
           eq(authCodes.email, email),
-          eq(authCodes.code, code),
+          eq(authCodes.used, false),
+          gte(authCodes.createdAt, lockoutStart)
+        )
+      );
+
+    // If too many unused codes exist, someone is trying many codes
+    if (recentAttempts.length >= MAX_VERIFY_ATTEMPTS) {
+      return res.status(429).json({
+        error: 'Too many failed attempts. Please wait 15 minutes or request a new code.'
+      });
+    }
+
+    // Find valid auth codes for this email
+    const validCodes = await db
+      .select()
+      .from(authCodes)
+      .where(
+        and(
+          eq(authCodes.email, email),
           eq(authCodes.used, false),
           gte(authCodes.expiresAt, new Date()) // Not expired
         )
-      )
-      .limit(1);
+      );
 
-    if (authCode.length === 0) {
+    if (validCodes.length === 0) {
+      return res.status(400).json({
+        error: 'Invalid or expired authentication code'
+      });
+    }
+
+    // Try to verify the code against each valid hash
+    let matchedCode = null;
+    for (const storedCode of validCodes) {
+      if (verifyAuthCode(code, email, storedCode.code)) {
+        matchedCode = storedCode;
+        break;
+      }
+    }
+
+    if (!matchedCode) {
       return res.status(400).json({
         error: 'Invalid or expired authentication code'
       });
@@ -53,7 +93,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     await db
       .update(authCodes)
       .set({ used: true })
-      .where(eq(authCodes.id, authCode[0].id));
+      .where(eq(authCodes.id, matchedCode.id));
 
     // Get user
     const user = await db

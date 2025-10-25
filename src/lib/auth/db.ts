@@ -2,11 +2,11 @@ import { neon } from '@neondatabase/serverless';
 import { drizzle } from 'drizzle-orm/neon-http';
 import { users, authCodes } from '../../../drizzle/schema';
 
-// Get database URL from environment
-const DATABASE_URL = process.env.DATABASE_URL || process.env.VITE_DATABASE_URL;
+// Get database URL from environment (server-side only)
+const DATABASE_URL = process.env.DATABASE_URL || process.env.PROD_DATABASE_URL;
 
 if (!DATABASE_URL) {
-  throw new Error('DATABASE_URL or VITE_DATABASE_URL environment variable is required');
+  throw new Error('DATABASE_URL environment variable is required for authentication');
 }
 
 // Create database connection

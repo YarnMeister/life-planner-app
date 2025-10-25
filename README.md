@@ -27,7 +27,7 @@ This template includes a **complete email authentication system** with:
 - ✅ Mock mode for development (no email API required)
 - ✅ Rate limiting and security best practices
 
-**[📖 View Auth Setup Guide](./docs/AUTH_SETUP.md)**
+**[📖 View Auth Setup Guide](./docs/email-auth-setup-instructions.md)**
 
 ---
 

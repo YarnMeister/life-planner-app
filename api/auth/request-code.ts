@@ -1,16 +1,25 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { z } from 'zod';
-import { eq, and, gte } from 'drizzle-orm';
+import { eq, and, gte, or } from 'drizzle-orm';
 import { db, authCodes, users } from '../../src/lib/auth/db';
-import { generateAuthCode } from '../../src/lib/auth/jwt';
+import { generateAuthCode, hashAuthCode } from '../../src/lib/auth/jwt';
 import { sendAuthCode } from '../../src/lib/auth/email';
 
 const requestSchema = z.object({
   email: z.string().email('Invalid email address'),
 });
 
-const RATE_LIMIT_WINDOW = 5 * 60 * 1000; // 5 minutes
-const RATE_LIMIT_MAX = 3; // Maximum requests per window
+// Configurable via environment variables with sensible defaults
+const RATE_LIMIT_WINDOW = parseInt(process.env.AUTH_RATE_LIMIT_WINDOW_MS || '300000'); // 5 minutes
+const RATE_LIMIT_MAX = parseInt(process.env.AUTH_RATE_LIMIT_MAX || '3');
+const CODE_TTL = parseInt(process.env.AUTH_CODE_TTL_MINUTES || '10') * 60 * 1000;
+
+// Helper to get client IP from Vercel request
+function getClientIp(req: VercelRequest): string {
+  const forwarded = req.headers['x-forwarded-for'];
+  const ip = typeof forwarded === 'string' ? forwarded.split(',')[0] : req.socket?.remoteAddress;
+  return ip || 'unknown';
+}
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   // Only allow POST requests
@@ -18,28 +27,27 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
-  // Enable CORS
-  res.setHeader('Access-Control-Allow-Credentials', 'true');
-  res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
-
+  // Handle preflight requests
   if (req.method === 'OPTIONS') {
     return res.status(200).end();
   }
 
   try {
     const { email } = requestSchema.parse(req.body);
+    const clientIp = getClientIp(req);
 
-    // Check rate limiting
-    const fiveMinutesAgo = new Date(Date.now() - RATE_LIMIT_WINDOW);
+    // Check rate limiting (both email-based and IP-based)
+    const windowStart = new Date(Date.now() - RATE_LIMIT_WINDOW);
     const recentCodes = await db
       .select()
       .from(authCodes)
       .where(
         and(
-          eq(authCodes.email, email),
-          gte(authCodes.createdAt, fiveMinutesAgo)
+          or(
+            eq(authCodes.email, email),
+            eq(authCodes.ipAddress, clientIp)
+          ),
+          gte(authCodes.createdAt, windowStart)
         )
       );
 
@@ -49,14 +57,18 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       });
     }
 
-    // Generate new auth code
+    // Generate new auth code (plaintext to send via email)
     const code = generateAuthCode();
-    const expiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
+    const expiresAt = new Date(Date.now() + CODE_TTL);
 
-    // Store auth code
+    // Hash the code before storing
+    const codeHash = hashAuthCode(code, email);
+
+    // Store hashed auth code with IP address
     await db.insert(authCodes).values({
       email,
-      code,
+      code: codeHash, // Store hash, not plaintext
+      ipAddress: clientIp,
       expiresAt,
       used: false,
     });
