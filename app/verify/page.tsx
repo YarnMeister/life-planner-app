@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { Suspense, useState, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Container, Paper, Title, Text, Button, Stack, PinInput, Group } from '@mantine/core';
 import { notifications } from '@mantine/notifications';
@@ -8,7 +8,7 @@ import { IconArrowLeft } from '@tabler/icons-react';
 import { useAuth } from '@/contexts/AuthContext';
 import Link from 'next/link';
 
-export default function VerifyPage() {
+function VerifyPageContent() {
   const [code, setCode] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [isResending, setIsResending] = useState(false);
@@ -38,14 +38,19 @@ export default function VerifyPage() {
     setIsLoading(true);
 
     try {
-      await login(email!, code);
-      
+      if (!email) {
+        throw new Error('Email is required');
+      }
+
+      await login(email, code);
+
       notifications.show({
-        title: 'Success!',
-        message: 'You have been logged in',
+        title: 'Success',
+        message: 'Login successful! Redirecting...',
         color: 'green',
       });
 
+      // Redirect to home page
       router.push('/');
     } catch (error) {
       notifications.show({
@@ -53,24 +58,23 @@ export default function VerifyPage() {
         message: error instanceof Error ? error.message : 'Invalid or expired code',
         color: 'red',
       });
-      setCode(''); // Clear the code input
     } finally {
       setIsLoading(false);
     }
   };
 
-  const handleResend = async () => {
+  const handleResendCode = async () => {
     if (!email) return;
 
     setIsResending(true);
 
     try {
       await requestCode(email);
-      
+
       notifications.show({
-        title: 'Code sent!',
-        message: 'Check your email for the authentication code',
-        color: 'green',
+        title: 'Code Sent',
+        message: 'A new verification code has been sent to your email',
+        color: 'blue',
       });
     } catch (error) {
       notifications.show({
@@ -83,74 +87,92 @@ export default function VerifyPage() {
     }
   };
 
-  // Auto-submit when 6 digits are entered
-  useEffect(() => {
-    if (code.length === 6) {
-      handleVerify();
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [code]);
-
   if (!email) {
-    return null;
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-gray-50">
+        <Container size="xs">
+          <Paper shadow="lg" p="xl" radius="lg" withBorder>
+            <Stack gap="md">
+              <Title order={3} ta="center">
+                Redirecting...
+              </Title>
+            </Stack>
+          </Paper>
+        </Container>
+      </div>
+    );
   }
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-gray-50">
       <Container size="xs">
-        <Paper shadow="md" p="xl" radius="md" withBorder>
+        <Paper shadow="lg" p="xl" radius="lg" withBorder>
           <Stack gap="lg">
-            <div style={{ textAlign: 'center' }}>
-              <Title order={2} mb="sm">
-                Enter verification code
+            <div>
+              <Title order={2} ta="center" mb="sm">
+                Verify Your Code
               </Title>
-              <Text c="dimmed" size="sm">
+              <Text size="sm" c="dimmed" ta="center">
                 We sent a 6-digit code to
               </Text>
-              <Text fw={600} size="sm">
+              <Text size="sm" c="dimmed" ta="center" fw={600}>
                 {email}
               </Text>
             </div>
 
-            <Stack gap="md" align="center">
-              <PinInput
-                length={6}
-                value={code}
-                onChange={setCode}
-                size="lg"
-                type="number"
-                oneTimeCode
-                autoFocus
-              />
+            <Stack gap="md">
+              <div>
+                <Text size="sm" fw={500} mb="xs">
+                  Enter Code
+                </Text>
+                <Group justify="center">
+                  <PinInput
+                    length={6}
+                    value={code}
+                    onChange={setCode}
+                    placeholder="0"
+                    size="lg"
+                    type="number"
+                    autoFocus
+                    onComplete={handleVerify}
+                  />
+                </Group>
+              </div>
 
               <Button
-                size="md"
                 fullWidth
+                size="lg"
                 onClick={handleVerify}
                 loading={isLoading}
                 disabled={code.length !== 6}
               >
-                Verify code
+                Verify Code
               </Button>
 
-              <Button
-                variant="subtle"
-                size="sm"
-                onClick={handleResend}
-                loading={isResending}
-              >
-                Resend code
-              </Button>
-
-              <Link href="/login" style={{ textDecoration: 'none' }}>
-                <Group gap="xs">
-                  <IconArrowLeft size={16} />
-                  <Text size="sm" c="blue" style={{ cursor: 'pointer' }}>
-                    Change email
-                  </Text>
-                </Group>
-              </Link>
+              <Stack gap="xs">
+                <Text size="sm" c="dimmed" ta="center">
+                  Didn't receive a code?
+                </Text>
+                <Button
+                  variant="subtle"
+                  size="sm"
+                  onClick={handleResendCode}
+                  loading={isResending}
+                >
+                  Resend Code
+                </Button>
+              </Stack>
             </Stack>
+
+            <Button
+              component={Link}
+              href="/login"
+              variant="subtle"
+              leftSection={<IconArrowLeft size={16} />}
+              fullWidth
+            >
+              Back to Login
+            </Button>
           </Stack>
         </Paper>
       </Container>
@@ -158,3 +180,14 @@ export default function VerifyPage() {
   );
 }
 
+export default function VerifyPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen flex items-center justify-center">
+        <Text>Loading...</Text>
+      </div>
+    }>
+      <VerifyPageContent />
+    </Suspense>
+  );
+}

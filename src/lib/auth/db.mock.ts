@@ -27,9 +27,6 @@ let failedAttemptIdCounter = 1;
 function evaluateCondition(item: any, condition: any): boolean {
   if (!condition) return true;
   
-  // Handle Drizzle SQL conditions by inspecting the structure
-  const conditionType = condition?._?.$brand;
-  
   // Handle and() - has children array
   if (condition?._ && Array.isArray(condition._)) {
     // This is an and() condition with multiple children

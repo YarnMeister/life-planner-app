@@ -36,17 +36,19 @@ const serverSchema = z.object({
   POSTGRES_URL: z.string().url().optional(),
   VERCEL_POSTGRES_URL: z.string().url().optional(),
 }).refine((data) => {
-  // In production, RESEND_API_KEY is required
-  if (data.NODE_ENV === 'production' && !data.RESEND_API_KEY) {
+  // In true production (Vercel production env), RESEND_API_KEY is required
+  const isActualProduction = data.VERCEL_ENV === 'production';
+  
+  if (isActualProduction && !data.RESEND_API_KEY) {
     return false;
   }
   // DEV_BYPASS_CODE should NEVER be used in production
-  if (data.NODE_ENV === 'production' && data.DEV_BYPASS_CODE) {
+  if (isActualProduction && data.DEV_BYPASS_CODE) {
     throw new Error('DEV_BYPASS_CODE must not be set in production!');
   }
   return true;
 }, {
-  message: 'RESEND_API_KEY is required in production',
+  message: 'RESEND_API_KEY is required in production (VERCEL_ENV=production)',
 });
 
 /**
