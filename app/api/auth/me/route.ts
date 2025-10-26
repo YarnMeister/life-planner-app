@@ -6,8 +6,8 @@ import { verifyToken } from '@/lib/auth/jwt';
 
 export async function GET(req: NextRequest) {
   try {
-    // Get token from cookies (cookies() returns the store directly in App Router)
-    const cookieStore = cookies();
+    // Get token from cookies (Next.js 15+ requires await)
+    const cookieStore = await cookies();
     const token = cookieStore.get('auth-token')?.value;
 
     if (!token) {

@@ -7,16 +7,24 @@ import { useAuth } from '@/contexts/AuthContext';
 
 export default function HomePage() {
   const router = useRouter();
-  const { user, logout } = useAuth();
+  const { user, logout, isLoading } = useAuth();
 
   const handleLogout = async () => {
     await logout();
     router.push('/login');
   };
 
-  // Redirect to login if not authenticated
+  // Show loading state while checking auth
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <Text>Loading...</Text>
+      </div>
+    );
+  }
+
+  // Middleware handles redirect, but show nothing if user is null
   if (!user) {
-    router.push('/login');
     return null;
   }
 
