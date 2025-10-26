@@ -185,9 +185,6 @@ npm run db:generate
 
 # Apply migrations to your database
 npm run db:migrate
-
-# Verify migration was successful
-npm run db:verify-migration
 ```
 
 ### 5. Run Development Server
@@ -428,7 +425,6 @@ Vercel will automatically:
 - `npm run db:status` - Check status
 - `npm run db:lint:migrations` - Lint migrations
 - `npm run db:test-connection` - Test connection
-- `npm run db:verify-migration` - Verify integrity
 
 ### Testing
 - `npm test` - Run tests once
