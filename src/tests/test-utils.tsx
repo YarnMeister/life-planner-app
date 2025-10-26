@@ -2,7 +2,6 @@ import { ReactElement, ReactNode } from 'react';
 import { render, RenderOptions } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { MantineProvider } from '@mantine/core';
-import { TooltipProvider } from '@/components/ui/tooltip';
 import { Notifications } from '@mantine/notifications';
 import { theme } from '@/theme/mantine-theme';
 
@@ -45,10 +44,8 @@ function AllTheProviders({ children }: AllTheProvidersProps) {
   return (
     <MantineProvider theme={theme} defaultColorScheme="light">
       <QueryClientProvider client={queryClient}>
-        <TooltipProvider>
-          <Notifications />
-          {children}
-        </TooltipProvider>
+        <Notifications />
+        {children}
       </QueryClientProvider>
     </MantineProvider>
   );
