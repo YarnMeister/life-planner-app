@@ -57,6 +57,7 @@ function evaluateCondition(item: any, condition: any): boolean {
   }
   
   // Extract operator
+  // eslint-disable-next-line prefer-const
   operator = condition?.operator;
   
   // If we found a field name and value, do the comparison

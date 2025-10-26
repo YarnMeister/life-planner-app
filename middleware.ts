@@ -15,8 +15,12 @@ export function middleware(request: NextRequest) {
   const token = request.cookies.get('auth-token')?.value;
   
   // Public routes that don't require authentication
-  const publicRoutes = ['/login', '/verify'];
+  const publicRoutes = ['/login', '/verify', '/mantine-demo'];
   const isPublicRoute = publicRoutes.some(route => pathname.startsWith(route));
+  
+  // Protected routes that require authentication
+  const protectedRoutes = ['/dashboard'];
+  const isProtectedRoute = protectedRoutes.some(route => pathname.startsWith(route));
   
   // If accessing a public route with a token, redirect to home
   if (isPublicRoute && token) {
@@ -24,7 +28,7 @@ export function middleware(request: NextRequest) {
   }
   
   // If accessing a protected route without a token, redirect to login
-  if (!isPublicRoute && !token && pathname !== '/login') {
+  if (isProtectedRoute && !token) {
     const loginUrl = new URL('/login', request.url);
     return NextResponse.redirect(loginUrl);
   }
@@ -34,19 +38,11 @@ export function middleware(request: NextRequest) {
 
 /**
  * Configure which routes the middleware should run on
- * Exclude static files, API routes, and Next.js internals
+ * Only run on protected dashboard routes to avoid blocking dev during Phase 1
  */
 export const config = {
   matcher: [
-    /*
-     * Match all request paths except:
-     * - _next/static (static files)
-     * - _next/image (image optimization files)
-     * - favicon.ico (favicon file)
-     * - public files (public directory)
-     * - api routes (handled separately)
-     */
-    '/((?!_next/static|_next/image|favicon.ico|.*\\..*|api).*)',
+    '/dashboard/:path*',
   ],
 };
 

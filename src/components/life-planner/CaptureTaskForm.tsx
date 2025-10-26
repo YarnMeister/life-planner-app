@@ -1,6 +1,6 @@
 'use client';
 
-import { Modal, Title, Text } from '@mantine/core';
+import { Modal, Text } from '@mantine/core';
 
 interface CaptureTaskFormProps {
   opened: boolean;

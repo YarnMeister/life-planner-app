@@ -1,57 +1,13 @@
-'use client';
-
 import { Container, Title, Text, Stack, Button, Paper, Group, Badge } from '@mantine/core';
-import { IconCode, IconDatabase, IconPalette, IconLogout, IconShieldCheck, IconLifebuoy } from '@tabler/icons-react';
-import { useRouter } from 'next/navigation';
-import { useAuth } from '@/contexts/AuthContext';
+import { IconCode, IconDatabase, IconPalette, IconLifebuoy } from '@tabler/icons-react';
+import Link from 'next/link';
 
 export default function HomePage() {
-  const router = useRouter();
-  const { user, logout, isLoading } = useAuth();
-
-  const handleLogout = async () => {
-    await logout();
-    router.push('/login');
-  };
-
-  // Show loading state while checking auth
-  if (isLoading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <Text>Loading...</Text>
-      </div>
-    );
-  }
-
-  // Middleware handles redirect, but show nothing if user is null
-  if (!user) {
-    return null;
-  }
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-gray-50">
       <Container size="md">
         <Stack gap="xl" align="center">
-          {/* User Info Badge */}
-          <Paper p="md" shadow="sm" radius="md" withBorder w="100%">
-            <Group justify="space-between" align="center">
-              <Group gap="sm">
-                <IconShieldCheck size={20} color="green" />
-                <div>
-                  <Text size="xs" c="dimmed">Logged in as</Text>
-                  <Text size="sm" fw={600}>{user?.email}</Text>
-                </div>
-              </Group>
-              <Button
-                variant="light"
-                color="red"
-                leftSection={<IconLogout size={16} />}
-                onClick={handleLogout}
-              >
-                Logout
-              </Button>
-            </Group>
-          </Paper>
 
           <Paper p="xl" shadow="md" radius="lg" withBorder w="100%">
             <Stack gap="lg" align="center">
@@ -69,21 +25,23 @@ export default function HomePage() {
               </Text>
 
               <Group justify="center" mt="md">
-                <Button 
-                  size="lg" 
-                  leftSection={<IconLifebuoy size={20} />}
-                  onClick={() => router.push('/dashboard')}
-                >
-                  Open Life Planner
-                </Button>
-                <Button 
-                  size="lg" 
-                  variant="light"
-                  leftSection={<IconPalette size={20} />}
-                  onClick={() => router.push('/mantine-demo')}
-                >
-                  View Mantine Demo
-                </Button>
+                <Link href="/dashboard">
+                  <Button 
+                    size="lg" 
+                    leftSection={<IconLifebuoy size={20} />}
+                  >
+                    Open Life Planner
+                  </Button>
+                </Link>
+                <Link href="/mantine-demo">
+                  <Button 
+                    size="lg" 
+                    variant="light"
+                    leftSection={<IconPalette size={20} />}
+                  >
+                    View Mantine Demo
+                  </Button>
+                </Link>
               </Group>
             </Stack>
           </Paper>
