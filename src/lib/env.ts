@@ -36,7 +36,9 @@ const serverSchema = z.object({
   POSTGRES_URL: z.string().url().optional(),
   VERCEL_POSTGRES_URL: z.string().url().optional(),
 }).refine((data) => {
-  // In true production (Vercel production env), RESEND_API_KEY is required
+  // Production detection - ONLY check VERCEL_ENV
+  // Don't check NODE_ENV because `next build` sets it to 'production' even for local builds
+  // For non-Vercel deployments, set VERCEL_ENV=production manually
   const isActualProduction = data.VERCEL_ENV === 'production';
   
   if (isActualProduction && !data.RESEND_API_KEY) {
@@ -85,6 +87,15 @@ export const serverEnv = serverSchema.parse({
  * Helper to check if dev bypass mode is enabled
  * Only works in development/test, never in production
  */
+/**
+ * Helper to determine if we're running in actual production
+ * Only checks VERCEL_ENV to avoid false positives during local builds
+ * For non-Vercel deployments (Docker/K8s), set VERCEL_ENV=production manually
+ */
+export function isProduction(): boolean {
+  return serverEnv.VERCEL_ENV === 'production';
+}
+
 export function isDevBypassEnabled(): boolean {
   return (
     (serverEnv.NODE_ENV === 'development' || serverEnv.NODE_ENV === 'test') &&

@@ -180,6 +180,8 @@ function VerifyPageContent() {
   );
 }
 
+// Note: Suspense is required because useSearchParams() is used during SSR
+// Without it, Next.js will throw an error during build
 export default function VerifyPage() {
   return (
     <Suspense fallback={
