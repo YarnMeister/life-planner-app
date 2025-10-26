@@ -104,20 +104,42 @@ npm install
 Create a `.env.local` file in the root directory:
 
 ```env
-# Database (Neon)
-DATABASE_URL="postgresql://..."
+# Database - Use 'mock' for development without real DB
+DATABASE_URL=mock
 
 # JWT Secret (generate with: openssl rand -base64 32)
-JWT_SECRET="your-secret-key-here"
+JWT_SECRET="your-secret-key-min-32-chars-long"
 
-# Resend Email API (Optional in dev - see Dev Bypass below)
-RESEND_API_KEY="re_..."
-FROM_EMAIL="noreply@yourdomain.com"
+# Development Bypass - No email service needed!
+DEV_BYPASS_CODE=123456
+
+# Optional: Resend Email API (not needed with dev bypass)
+# RESEND_API_KEY="re_..."
+# FROM_EMAIL="noreply@yourdomain.com"
 
 # Optional: Auth Configuration
 AUTH_RATE_LIMIT_WINDOW_MS=300000  # 5 minutes
 AUTH_RATE_LIMIT_MAX=3              # 3 attempts per window
 AUTH_CODE_TTL_MINUTES=10           # Code expires in 10 minutes
+```
+
+#### 🗄️ Mock Database (No Neon Account Needed!)
+
+**For development without a real database**, use the mock database:
+
+```env
+DATABASE_URL=mock
+```
+
+**How it works:**
+1. All data stored in memory (lost on server restart)
+2. Perfect for testing the template without infrastructure
+3. Supports all auth operations (users, codes, failed attempts)
+4. **When ready for production**, replace with real Neon PostgreSQL URL
+
+**Switch to Real Database:**
+```env
+DATABASE_URL=postgresql://user:pass@host.neon.tech/db?sslmode=require
 ```
 
 #### 🔧 Development Bypass (No Resend Account Needed!)

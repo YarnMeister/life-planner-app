@@ -8,23 +8,42 @@ import { neon } from '@neondatabase/serverless';
 import { drizzle } from 'drizzle-orm/neon-http';
 import { users, authCodes, failedAuthAttempts } from '../../../drizzle/schema';
 import { serverEnv } from '../env';
+import { mockDb, isMockDbEnabled } from './db.mock';
 
 // Use validated env from centralized config
 const DATABASE_URL = serverEnv.DATABASE_URL;
 
-// Create Neon serverless connection with WebSocket support for multi-statement SQL
-const sql = neon(DATABASE_URL, {
-  // Neon serverless driver handles connection pooling automatically
-  fetchOptions: {
-    // Ensure proper timeout handling
-  },
-});
+// Check if we should use mock database
+const useMockDb = isMockDbEnabled();
+
+let db: any;
+
+if (useMockDb) {
+  // Use mock database for development without real DB
+  console.log('🗄️  Using MOCK DATABASE (in-memory storage)');
+  db = mockDb as any;
+} else {
+  // Create Neon serverless connection with WebSocket support for multi-statement SQL
+  const sql = neon(DATABASE_URL, {
+    // Neon serverless driver handles connection pooling automatically
+    fetchOptions: {
+      // Ensure proper timeout handling
+    },
+  });
+  
+  /**
+   * Database client instance
+   * Exported as a singleton to prevent connection leaks in development
+   */
+  db = drizzle(sql);
+}
 
 /**
  * Database client instance
- * Exported as a singleton to prevent connection leaks in development
+ * Uses mock DB if DATABASE_URL starts with 'mock://' or is 'mock'
+ * Otherwise uses real Neon database
  */
-export const db = drizzle(sql);
+export { db };
 
 /**
  * Export schema for convenience

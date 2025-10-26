@@ -5,8 +5,11 @@ import { z } from 'zod';
  * These variables should NEVER be exposed to the client
  */
 const serverSchema = z.object({
-  // Database
-  DATABASE_URL: z.string().url().min(1, 'DATABASE_URL is required'),
+  // Database (can be 'mock' or 'mock://' for in-memory testing)
+  DATABASE_URL: z.string().min(1, 'DATABASE_URL is required').refine(
+    (url) => url === 'mock' || url.startsWith('mock://') || url.startsWith('postgresql://') || url.startsWith('postgres://'),
+    { message: 'DATABASE_URL must be a PostgreSQL URL or "mock" for testing' }
+  ),
   
   // JWT
   JWT_SECRET: z.string().min(32, 'JWT_SECRET must be at least 32 characters'),
