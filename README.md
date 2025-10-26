@@ -5,7 +5,7 @@ A production-ready starter template for building modern web applications with Re
 ## 🚀 Tech Stack
 
 - **Frontend:** React 18 + TypeScript + Next.js 15 (App Router)
-- **UI:** Mantine UI + shadcn/ui + Tailwind CSS + Radix UI
+- **UI:** Mantine UI + Tailwind CSS
 - **Icons:** Tabler Icons
 - **Database:** PostgreSQL (Neon) + Drizzle ORM
 - **Authentication:** Email OTP (Passwordless) with Resend.com
@@ -66,7 +66,7 @@ function MyComponent() {
 - ⚡ **Next.js App Router** - Server components and streaming by default
 - 🔒 **Email Authentication** - Passwordless login with Resend
 - 🗄️ **Database Ready** - Drizzle ORM with Neon PostgreSQL
-- 🎨 **Beautiful UI** - Mantine + shadcn/ui components
+- 🎨 **Beautiful UI** - Mantine UI components
 - 🧪 **Testing Setup** - Vitest configured and ready
 - 📝 **TypeScript** - Strict mode enabled
 - 🎯 **ESLint + Prettier** - Code quality tools
@@ -204,7 +204,6 @@ new-app-template/
 ├── app/                      # Next.js App Router
 │   ├── api/                 # API Route Handlers
 │   │   └── auth/           # Authentication endpoints
-│   ├── components/         # UI components (shadcn/ui)
 │   ├── login/              # Login page
 │   ├── verify/             # OTP verification page
 │   ├── mantine-demo/       # Mantine component showcase
@@ -214,6 +213,7 @@ new-app-template/
 │   └── globals.css         # Global styles
 ├── src/
 │   ├── components/
+│   │   ├── life-planner/   # Life planner components
 │   │   └── providers/      # Client-side providers
 │   ├── contexts/           # React contexts
 │   ├── hooks/              # Custom hooks

@@ -317,42 +317,35 @@ function MyComponent() {
 }
 ```
 
-## Working with Both UI Systems
+## Component Library
 
-This template includes both Mantine UI and shadcn/ui. Here's how to use them together:
+This template uses **Mantine UI** as the primary component library, providing a comprehensive set of accessible, customizable components for building modern web applications.
 
-### When to Use Each
+### Component Categories
 
-**Use Mantine for:**
-- Form components (TextInput, Select, etc.)
-- Layout components (Stack, Group, Grid)
-- Notifications and modals
-- Data display (Tables, Cards)
-- Complex components (DatePicker, ColorPicker)
+**Form Components:**
+- TextInput, Select, Checkbox, Radio, Switch
+- DatePicker, ColorPicker, FileInput
+- NumberInput, PasswordInput, Textarea
 
-**Use shadcn/ui for:**
-- Command palette
-- Data tables with advanced features
-- Specific components you prefer from shadcn
+**Layout Components:**
+- Stack, Group, Grid, Flex
+- Container, AppShell, Paper
+- Divider, Space, Center
 
-### Example: Hybrid Component
+**Data Display:**
+- Table, Card, Badge, Avatar
+- Timeline, Accordion, List
+- Tooltip, Popover, HoverCard
 
-```tsx
-import { Card, Title, Text, Stack } from '@mantine/core';
-import { Button } from '@/components/ui/button'; // shadcn button
+**Feedback:**
+- Notifications, Modal, Drawer
+- Alert, Loader, Progress
+- Skeleton, Indicator
 
-function HybridComponent() {
-  return (
-    <Card shadow="sm" padding="lg" radius="md" withBorder>
-      <Stack gap="md">
-        <Title order={3}>Hybrid Component</Title>
-        <Text>Using Mantine Card with shadcn Button</Text>
-        <Button>shadcn Button</Button>
-      </Stack>
-    </Card>
-  );
-}
-```
+**Navigation:**
+- Tabs, Navbar, Breadcrumbs
+- Pagination, Stepper, Anchor
 
 ## Demo Page
 
