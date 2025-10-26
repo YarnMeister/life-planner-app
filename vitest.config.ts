@@ -1,5 +1,4 @@
 import { defineConfig } from 'vitest/config';
-import react from '@vitejs/plugin-react';
 import path from 'path';
 
 /**
@@ -7,9 +6,9 @@ import path from 'path';
  * 
  * This config is separate from Next.js and optimized for testing.
  * It uses jsdom for browser environment simulation.
+ * Note: @vitejs/plugin-react is NOT needed for Vitest tests.
  */
 export default defineConfig({
-  plugins: [react()],
   test: {
     globals: true,
     environment: 'jsdom',
@@ -21,10 +20,6 @@ export default defineConfig({
       jsdom: {
         url: 'http://localhost',
       },
-    },
-    // Mock Next.js specific modules
-    alias: {
-      '@/': path.resolve(__dirname, './src/'),
     },
   },
   resolve: {

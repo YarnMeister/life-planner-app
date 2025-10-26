@@ -1,6 +1,6 @@
 # Email Authentication Setup Guide
 
-This template includes a complete passwordless email authentication system using Resend.com for email delivery.
+This template includes a complete passwordless email authentication system using Resend.com for email delivery, built with Next.js App Router.
 
 ## 🎯 Features
 
@@ -9,9 +9,10 @@ This template includes a complete passwordless email authentication system using
 - ✅ **Rate limiting** (3 requests per 5 minutes per email)
 - ✅ **JWT tokens** with 7-day expiration
 - ✅ **HttpOnly cookies** for secure token storage
-- ✅ **Route protection** for authenticated pages
+- ✅ **Next.js middleware** for route protection
 - ✅ **Auto-user creation** on first login
 - ✅ **Mock mode** for development without email API
+- ✅ **Mock database** for development without PostgreSQL
 
 ## 📋 Quick Start
 
@@ -23,22 +24,45 @@ Copy `env.example` to `.env.local`:
 cp env.example .env.local
 ```
 
-Configure the following variables:
+For development with mock database and email:
 
 ```env
-# Required: Database connection
+# Mock database for development (no PostgreSQL needed)
+DATABASE_URL=mock
+
+# Required: JWT secret (generate with: openssl rand -base64 32)
+# Must be at least 32 characters
+JWT_SECRET=dev-jwt-secret-must-be-at-least-32-characters-long-for-validation
+
+# Development bypass code (optional - allows testing without emails)
+DEV_BYPASS_CODE=123456
+DEV_TEST_EMAIL=test@example.com
+
+# Optional: Resend API key (if not set, codes print to console)
+# RESEND_API_KEY=re_xxxxxxxxxx
+```
+
+For production with real database:
+
+```env
+# Real PostgreSQL database
 DATABASE_URL=postgresql://user:password@host:port/database?sslmode=require
 
 # Required: JWT secret (generate with: openssl rand -base64 32)
-JWT_SECRET=your-secure-random-string
+JWT_SECRET=your-secure-random-string-at-least-32-chars
 
-# Optional: Resend API key (if not set, codes print to console)
+# Required in production: Resend API key
 RESEND_API_KEY=re_xxxxxxxxxx
+
+# Required in production
+NODE_ENV=production
 ```
 
-### 2. Run Database Migrations
+### 2. Run Database Migrations (Production Only)
 
-Generate and apply migrations for auth tables:
+**Skip this for development with mock database (`DATABASE_URL=mock`)**
+
+For production with a real database:
 
 ```bash
 npm run db:generate
@@ -55,9 +79,29 @@ This creates two tables:
 npm run dev
 ```
 
-Visit `http://localhost:5173` - you'll be redirected to `/auth/login`
+Visit `http://localhost:3000` - you'll be redirected to `/login` by Next.js middleware.
 
 ## 🔧 Configuration
+
+### Mock Database Mode (Development)
+
+Set `DATABASE_URL=mock` in `.env.local` to use an in-memory database. Perfect for:
+- Local development without PostgreSQL
+- Testing the template
+- Demo deployments
+
+**Note:** Data is stored in memory and lost on server restart.
+
+### Development Bypass Mode
+
+Set `DEV_BYPASS_CODE` to skip email sending in development:
+
+```env
+DEV_BYPASS_CODE=123456
+DEV_TEST_EMAIL=test@example.com
+```
+
+Any email will work with the bypass code in development/test environments. This is **blocked in production** for security.
 
 ### Resend.com Setup (Optional for Production)
 
@@ -70,7 +114,7 @@ Visit `http://localhost:5173` - you'll be redirected to `/auth/login`
 
 ### JWT Secret Generation
 
-Generate a secure JWT secret:
+Generate a secure JWT secret (must be at least 32 characters):
 
 ```bash
 openssl rand -base64 32
@@ -85,33 +129,42 @@ For production deployment on Vercel, add these environment variables:
 1. Go to your Vercel project → **Settings** → **Environment Variables**
 2. Add:
    - `DATABASE_URL` or `PROD_DATABASE_URL` (Production scope)
-   - `JWT_SECRET` (Production scope)
+   - `JWT_SECRET` (Production scope, 32+ characters)
    - `RESEND_API_KEY` (Production scope)
    - `NODE_ENV=production` (Production scope)
+   - `FROM_EMAIL=noreply@yourdomain.com` (Production scope)
 
 ## 🏗️ Architecture
 
-### Backend (Vercel Serverless Functions)
+### Backend (Next.js App Router API Routes)
 
-Located in `/api/auth/`:
+Located in `/app/api/auth/`:
 
-- **`request-code.ts`** - Sends verification code via email
+- **`request-code/route.ts`** - Sends verification code via email
   - Rate limiting (3 requests per 5 minutes)
   - Auto-creates user if doesn't exist
   - Stores code in database with 10-minute expiration
+  - Supports DEV_BYPASS_CODE in development
 
-- **`verify-code.ts`** - Verifies code and creates session
+- **`verify-code/route.ts`** - Verifies code and creates session
   - Validates code against database
   - Marks code as used (one-time use)
   - Generates JWT token
   - Sets HttpOnly cookie
 
-- **`me.ts`** - Returns current authenticated user
+- **`me/route.ts`** - Returns current authenticated user
   - Verifies JWT token from cookie
   - Returns user information
 
-- **`logout.ts`** - Clears authentication session
+- **`logout/route.ts`** - Clears authentication session
   - Expires the auth cookie
+
+### Middleware (`middleware.ts`)
+
+Next.js middleware protects routes:
+- Checks for valid JWT in cookies
+- Redirects unauthenticated users to `/login`
+- Allows access to `/login`, `/verify`, and `/api/auth/*`
 
 ### Frontend Components
 
@@ -122,21 +175,11 @@ const { user, isLoading, isAuthenticated, login, logout, requestCode } = useAuth
 ```
 
 #### Auth Pages
-- **`/auth/login`** - Email entry page
-- **`/auth/verify`** - 6-digit code verification page
+- **`/login`** (`app/login/page.tsx`) - Email entry page
+- **`/verify`** (`app/verify/page.tsx`) - 6-digit code verification page
 
 #### Protected Routes
-Wrap routes with `ProtectedRoute` component:
-```tsx
-<Route
-  path="/"
-  element={
-    <ProtectedRoute>
-      <Index />
-    </ProtectedRoute>
-  }
-/>
-```
+All routes are protected by default via `middleware.ts`. To make a route public, add it to the matcher config in `middleware.ts`.
 
 ## 🔒 Security Features
 
@@ -159,9 +202,15 @@ Wrap routes with `ProtectedRoute` component:
 - **SameSite: lax** for CSRF protection
 
 ### 4. Input Validation
-- **Zod schema validation** for all inputs
+- **Zod schema validation** for all inputs and environment variables
 - **Email format validation**
 - **Code length validation** (exactly 6 digits)
+- **Centralized env validation** in `src/lib/env.ts`
+
+### 5. Development Safety
+- **DEV_BYPASS_CODE blocked in production** via Zod validation
+- **Mock database blocked for DrizzleKit operations**
+- **Console logs gated by NODE_ENV**
 
 ## 📝 Customization
 
@@ -171,7 +220,7 @@ Edit `src/lib/auth/email.ts` to customize the email design:
 
 ```typescript
 await resend.emails.send({
-  from: 'Your App <auth@yourdomain.com>',
+  from: serverEnv.FROM_EMAIL,
   subject: 'Your custom subject',
   html: `...your custom HTML...`,
 });
@@ -182,7 +231,7 @@ await resend.emails.send({
 Edit `src/lib/auth/jwt.ts`:
 
 ```typescript
-return jwt.sign(payload, JWT_SECRET, {
+return jwt.sign(payload, serverEnv.JWT_SECRET, {
   expiresIn: '14d', // Change from 7d to 14d
   // ...
 });
@@ -190,45 +239,50 @@ return jwt.sign(payload, JWT_SECRET, {
 
 ### Modify Rate Limits
 
-Edit `api/auth/request-code.ts`:
+Edit `src/lib/env.ts` and set in `.env.local`:
 
-```typescript
-const RATE_LIMIT_WINDOW = 10 * 60 * 1000; // 10 minutes
-const RATE_LIMIT_MAX = 5; // 5 requests per window
+```env
+AUTH_RATE_LIMIT_WINDOW_MS=600000  # 10 minutes
+AUTH_RATE_LIMIT_MAX=5              # 5 requests
 ```
 
 ### Change Code Expiration
 
-Edit `api/auth/request-code.ts`:
+Edit `src/lib/env.ts` and set in `.env.local`:
 
-```typescript
-const expiresAt = new Date(Date.now() + 15 * 60 * 1000); // 15 minutes
+```env
+AUTH_CODE_TTL_MINUTES=15  # 15 minutes
 ```
 
 ## 🧪 Testing
 
-### Development Mode (Without Resend)
+### Development Mode (Mock Database + Mock Email)
 
-1. Leave `RESEND_API_KEY` unset in `.env.local`
-2. Start the dev server
-3. Request a code at `/auth/login`
+1. Set `.env.local`:
+```env
+DATABASE_URL=mock
+JWT_SECRET=dev-jwt-secret-must-be-at-least-32-characters-long
+DEV_BYPASS_CODE=123456
+```
+
+2. Start the dev server: `npm run dev`
+3. Request a code at `/login`
 4. Check the console for the code:
 
 ```
 ============================================================
-📧 MOCK EMAIL MODE - No RESEND_API_KEY configured
+📧 DEV BYPASS MODE ACTIVE
 ============================================================
-To: user@example.com
-Code: 123456
-Expires: 10 minutes
+📧 To: user@example.com
+🔑 Code: 123456 (DEV BYPASS)
 ============================================================
 ```
 
-5. Enter the code at `/auth/verify`
+5. Enter the code at `/verify`
 
 ### Production Testing
 
-1. Set `RESEND_API_KEY` in environment
+1. Set real `DATABASE_URL`, `JWT_SECRET`, and `RESEND_API_KEY`
 2. Request a code - check your email
 3. Enter the code to authenticate
 
@@ -241,7 +295,7 @@ Expires: 10 minutes
 3. Add environment variables (see Configuration section)
 4. Deploy!
 
-The API routes will automatically work as serverless functions.
+The API routes will automatically work as serverless functions with Next.js App Router.
 
 ## 🐛 Troubleshooting
 
@@ -270,13 +324,20 @@ The API routes will automatically work as serverless functions.
 - Is the database accessible?
 - Have migrations been run?
 
-**Solution:** Verify connection string and run `npm run db:migrate`
+**Solution:** 
+- For development: Use `DATABASE_URL=mock`
+- For production: Verify connection string and run `npm run db:migrate`
+
+### "DrizzleKit commands fail with mock database"
+
+**Expected behavior:** DrizzleKit (`db:generate`, `db:migrate`) requires a real PostgreSQL URL. Use a real database URL when running these commands.
 
 ### "JWT verification failed"
 
 **Check:**
 - Is `JWT_SECRET` the same across all instances?
 - Is the cookie being sent with requests?
+- Is `JWT_SECRET` at least 32 characters?
 
 **Solution:** Clear cookies and log in again
 
@@ -372,13 +433,15 @@ Logout current user.
 
 The auth pages use Mantine UI components. Customize them in:
 
-- `src/pages/auth/Login.tsx` - Email entry page
-- `src/pages/auth/Verify.tsx` - Code verification page
+- `app/login/page.tsx` - Email entry page
+- `app/verify/page.tsx` - Code verification page
 
 Both pages match the template's design system and can be easily styled with Mantine's theming system.
 
 ## 📖 Further Reading
 
+- [Next.js App Router Documentation](https://nextjs.org/docs/app)
+- [Next.js Middleware Documentation](https://nextjs.org/docs/app/building-your-application/routing/middleware)
 - [Resend Documentation](https://resend.com/docs)
 - [JWT Best Practices](https://jwt.io/introduction)
 - [Mantine UI Documentation](https://mantine.dev)

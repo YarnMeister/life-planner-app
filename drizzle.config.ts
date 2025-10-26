@@ -20,6 +20,15 @@ if (!url) {
   );
 }
 
+// Reject mock URLs for drizzle-kit operations
+if (url === 'mock' || url.startsWith('mock://')) {
+  throw new Error(
+    'Mock database URLs are not supported for drizzle-kit operations (generate/migrate).\n' +
+    'Please set DATABASE_URL to a real PostgreSQL connection string.\n' +
+    'The mock database is only for runtime development, not for schema management.'
+  );
+}
+
 // Next.js compatible Drizzle configuration
 // Works with both Next.js server runtime and standalone scripts
 export default {

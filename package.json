@@ -5,11 +5,10 @@
   "type": "module",
   "scripts": {
     "dev": "next dev",
-    "prebuild:db": "node scripts/prebuild-migrations.cjs",
-    "build": "npm run prebuild:db && next build",
+    "prebuild": "node scripts/prebuild-migrations.cjs",
+    "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "prebuild": "node -e \"process.exit(process.env.VERCEL_ENV==='preview'?0:1)\" || npm run db:lint:migrations && npm run db:migrate",
     "test": "vitest run",
     "test:watch": "vitest",
     "test:ui": "vitest --ui",
@@ -21,7 +20,6 @@
     "db:migrate": "drizzle-kit migrate",
     "db:lint:migrations": "node scripts/lint-migrations.cjs",
     "db:test-connection": "node scripts/test-connection.js",
-    "db:verify-migration": "node scripts/verify-migration.cjs",
     "db:test-rls": "node scripts/test-rls.mjs",
     "db:audit-rls": "node scripts/audit-rls.mjs",
     "db:audit-raw-sql": "node scripts/audit-raw-sql.mjs"

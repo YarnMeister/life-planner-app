@@ -4,22 +4,6 @@ const nextConfig: NextConfig = {
   /* Next.js config options here */
   reactStrictMode: true,
   
-  // Enable bundle analyzer when ANALYZE=true
-  ...(process.env.ANALYZE === 'true' && {
-    webpack: (config, { isServer }) => {
-      if (!isServer) {
-        const { BundleAnalyzerPlugin } = require('@next/bundle-analyzer')();
-        config.plugins.push(
-          new BundleAnalyzerPlugin({
-            analyzerMode: 'static',
-            reportFilename: '../analyze/client.html',
-          })
-        );
-      }
-      return config;
-    },
-  }),
-  
   // Experimental features
   experimental: {
     // Enable server actions if needed
@@ -27,5 +11,9 @@ const nextConfig: NextConfig = {
   },
 };
 
-export default nextConfig;
+// Use the proper @next/bundle-analyzer wrapper pattern
+const withBundleAnalyzer = require('@next/bundle-analyzer')({
+  enabled: process.env.ANALYZE === 'true',
+});
 
+export default withBundleAnalyzer(nextConfig);

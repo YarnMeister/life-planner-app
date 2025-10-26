@@ -14,11 +14,12 @@ This template comes with Mantine UI pre-configured and ready to use. This guide 
 
 ### Pre-configured Setup
 - ✅ Mantine theme with professional blue color palette
-- ✅ MantineProvider configured in `src/App.tsx`
+- ✅ MantineProvider configured in `app/layout.tsx` (Next.js App Router)
 - ✅ Notifications provider ready to use
 - ✅ PostCSS configuration for Mantine styles
 - ✅ Responsive breakpoints matching the theme
 - ✅ Component defaults (radius, shadows, spacing)
+- ✅ SSR-compatible setup for Next.js
 
 ## Quick Start
 
@@ -357,6 +358,27 @@ function HybridComponent() {
 
 Visit `/mantine-demo` to see all configured Mantine components in action with the current theme.
 
+## Next.js Integration
+
+This template uses Next.js App Router with Mantine. Key integration points:
+
+### Client Components
+The MantineProvider is a Client Component (marked with `'use client'`). It's set up in `src/components/providers/MantineProvider.tsx` and wrapped in `app/layout.tsx`.
+
+### ColorSchemeScript
+The `<MantineColorSchemeScript />` is added to the `<head>` in `app/layout.tsx` to prevent flash of unstyled content (FOUC) and support dark mode properly.
+
+### CSS Import Order
+In `app/globals.css`, Mantine styles are imported **before** Tailwind to ensure proper style precedence:
+```css
+@import '@mantine/core/styles.css';
+@import '@mantine/notifications/styles.css';
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+```
+
 ## Additional Resources
 
 - [Mantine Documentation](https://mantine.dev/)
@@ -370,12 +392,14 @@ Visit `/mantine-demo` to see all configured Mantine components in action with th
 
 ### Styles Not Applying
 
-Make sure you've imported the Mantine CSS in `src/main.tsx`:
+Make sure you've imported the Mantine CSS in `app/globals.css`:
 
-```tsx
-import '@mantine/core/styles.css';
-import '@mantine/notifications/styles.css';
+```css
+@import '@mantine/core/styles.css';
+@import '@mantine/notifications/styles.css';
 ```
+
+These must come **before** Tailwind directives to ensure proper style precedence.
 
 ### TypeScript Errors
 

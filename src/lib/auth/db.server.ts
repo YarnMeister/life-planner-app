@@ -20,7 +20,9 @@ let db: any;
 
 if (useMockDb) {
   // Use mock database for development without real DB
-  console.log('🗄️  Using MOCK DATABASE (in-memory storage)');
+  if (process.env.NODE_ENV !== 'production') {
+    console.log('🗄️  Using MOCK DATABASE (in-memory storage)');
+  }
   db = mockDb as any;
 } else {
   // Create Neon serverless connection with WebSocket support for multi-statement SQL
