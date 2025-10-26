@@ -1,38 +1,53 @@
 import { create } from 'zustand';
 import { Pillar, Theme, Task } from '@/types';
+import { pillarsAPI, themesAPI, tasksAPI, APIError } from '../lib/api/life-planner.client';
 
 interface LifeOSState {
+  // Data
   pillars: Pillar[];
   themes: Theme[];
   tasks: Task[];
   selectedPillarId: string | null;
   selectedThemeIds: string[];
   selectedTaskId: string | null;
-  
+
+  // Loading states
+  isLoading: boolean;
+  isSyncing: boolean;
+  error: string | null;
+
   // Pillar actions
-  addPillar: (pillar: Omit<Pillar, 'id' | 'avgPercent'>) => void;
-  updatePillar: (id: string, updates: Partial<Pillar>) => void;
-  deletePillar: (id: string) => void;
+  addPillar: (pillar: Omit<Pillar, 'id' | 'avgPercent'>) => Promise<Pillar>;
+  updatePillar: (id: string, updates: Partial<Pillar>) => Promise<Pillar>;
+  deletePillar: (id: string) => Promise<void>;
   selectPillar: (id: string | null) => void;
-  
+
   // Theme actions
-  addTheme: (theme: Omit<Theme, 'id'>) => void;
-  updateTheme: (id: string, updates: Partial<Theme>) => void;
-  deleteTheme: (id: string) => void;
+  addTheme: (theme: Omit<Theme, 'id'>) => Promise<Theme>;
+  updateTheme: (id: string, updates: Partial<Theme>) => Promise<Theme>;
+  deleteTheme: (id: string) => Promise<void>;
   toggleThemeSelection: (id: string) => void;
   selectSingleTheme: (id: string) => void;
-  
+
   // Task actions
-  addTask: (task: Omit<Task, 'id'>) => void;
-  updateTask: (id: string, updates: Partial<Task>) => void;
-  deleteTask: (id: string) => void;
+  addTask: (task: Omit<Task, 'id'>) => Promise<Task>;
+  updateTask: (id: string, updates: Partial<Task>) => Promise<Task>;
+  deleteTask: (id: string) => Promise<void>;
   selectTask: (id: string | null) => void;
-  reorderTasks: (themeId: string, tasks: Task[]) => void;
-  
+  reorderTasks: (themeId: string, taskIds: string[]) => Promise<Task[]>;
+
+  // Data fetching
+  fetchPillars: () => Promise<void>;
+  fetchThemes: (pillarId?: string) => Promise<void>;
+  fetchTasks: (themeId?: string, status?: 'open' | 'done') => Promise<void>;
+
   // Computed
   getThemesByPillar: (pillarId: string) => Theme[];
   getTasksByTheme: (themeId: string) => Task[];
   recalculatePillarAverage: (pillarId: string) => void;
+
+  // Error handling
+  clearError: () => void;
 }
 
 const generateId = () => Math.random().toString(36).substr(2, 9);
@@ -209,35 +224,213 @@ const initialTasks: Task[] = [
 ];
 
 export const useLifeOSStore = create<LifeOSState>((set, get) => ({
+  // Initial state
   pillars: initialPillars,
   themes: initialThemes,
   tasks: initialTasks,
   selectedPillarId: null,
   selectedThemeIds: [],
   selectedTaskId: null,
-  
-  addPillar: (pillar) => {
-    const newPillar = { ...pillar, id: generateId(), avgPercent: 0 };
-    set((state) => ({ pillars: [...state.pillars, newPillar] }));
+  isLoading: false,
+  isSyncing: false,
+  error: null,
+
+  // Error handling
+  clearError: () => set({ error: null }),
+
+  // Pillar actions with API integration
+  addPillar: async (pillar) => {
+    const optimisticPillar = { ...pillar, id: generateId(), avgPercent: 0 } as Pillar;
+    try {
+      set({ isSyncing: true, error: null });
+      // Optimistic update
+      set((state) => ({ pillars: [...state.pillars, optimisticPillar] }));
+
+      // API call
+      const result = await pillarsAPI.create(pillar);
+
+      // Replace optimistic with real
+      set((state) => ({
+        pillars: state.pillars.map((p) => (p.id === optimisticPillar.id ? result : p)),
+      }));
+
+      return result;
+    } catch (error) {
+      // Rollback optimistic update
+      set((state) => ({
+        pillars: state.pillars.filter((p) => p.id !== optimisticPillar.id),
+        error: error instanceof APIError ? error.message : 'Failed to create pillar',
+      }));
+      throw error;
+    } finally {
+      set({ isSyncing: false });
+    }
   },
-  
-  updatePillar: (id, updates) => {
-    set((state) => ({
-      pillars: state.pillars.map((p) => (p.id === id ? { ...p, ...updates } : p)),
-    }));
+
+  updatePillar: async (id, updates) => {
+    const oldPillar = get().pillars.find((p) => p.id === id);
+    try {
+      set({ isSyncing: true, error: null });
+
+      // Optimistic update
+      set((state) => ({
+        pillars: state.pillars.map((p) => (p.id === id ? { ...p, ...updates } : p)),
+      }));
+
+      // API call
+      const result = await pillarsAPI.update(id, updates);
+
+      // Update with server response
+      set((state) => ({
+        pillars: state.pillars.map((p) => (p.id === id ? result : p)),
+      }));
+
+      return result;
+    } catch (error) {
+      // Rollback optimistic update
+      if (oldPillar) {
+        set((state) => ({
+          pillars: state.pillars.map((p) => (p.id === id ? oldPillar : p)),
+        }));
+      }
+      set({ error: error instanceof APIError ? error.message : 'Failed to update pillar' });
+      throw error;
+    } finally {
+      set({ isSyncing: false });
+    }
   },
-  
-  deletePillar: (id) => {
-    set((state) => ({
-      pillars: state.pillars.filter((p) => p.id !== id),
-      themes: state.themes.filter((t) => t.pillarId !== id),
-      tasks: state.tasks.filter((t) => t.pillarId !== id),
-      selectedPillarId: state.selectedPillarId === id ? null : state.selectedPillarId,
-    }));
+
+  deletePillar: async (id) => {
+    const oldState = { pillars: get().pillars, themes: get().themes, tasks: get().tasks };
+    try {
+      set({ isSyncing: true, error: null });
+
+      // Optimistic update
+      set((state) => ({
+        pillars: state.pillars.filter((p) => p.id !== id),
+        themes: state.themes.filter((t) => t.pillarId !== id),
+        tasks: state.tasks.filter((t) => t.pillarId !== id),
+        selectedPillarId: state.selectedPillarId === id ? null : state.selectedPillarId,
+      }));
+
+      // API call
+      await pillarsAPI.delete(id);
+    } catch (error) {
+      // Rollback optimistic update
+      set({
+        pillars: oldState.pillars,
+        themes: oldState.themes,
+        tasks: oldState.tasks,
+        error: error instanceof APIError ? error.message : 'Failed to delete pillar',
+      });
+      throw error;
+    } finally {
+      set({ isSyncing: false });
+    }
   },
-  
+
   selectPillar: (id) => set({ selectedPillarId: id, selectedThemeIds: [] }),
-  
+
+  // Theme actions with API integration
+  addTheme: async (theme) => {
+    const optimisticTheme = { ...theme, id: generateId() } as Theme;
+    try {
+      set({ isSyncing: true, error: null });
+
+      // Optimistic update
+      set((state) => ({ themes: [...state.themes, optimisticTheme] }));
+      get().recalculatePillarAverage(theme.pillarId);
+
+      // API call
+      const result = await themesAPI.create(theme);
+
+      // Replace optimistic with real
+      set((state) => ({
+        themes: state.themes.map((t) => (t.id === optimisticTheme.id ? result : t)),
+      }));
+      get().recalculatePillarAverage(theme.pillarId);
+
+      return result;
+    } catch (error) {
+      // Rollback optimistic update
+      set((state) => ({
+        themes: state.themes.filter((t) => t.id !== optimisticTheme.id),
+        error: error instanceof APIError ? error.message : 'Failed to create theme',
+      }));
+      get().recalculatePillarAverage(theme.pillarId);
+      throw error;
+    } finally {
+      set({ isSyncing: false });
+    }
+  },
+
+  updateTheme: async (id, updates) => {
+    const theme = get().themes.find((t) => t.id === id);
+    const oldTheme = theme ? { ...theme } : null;
+    try {
+      set({ isSyncing: true, error: null });
+
+      // Optimistic update
+      set((state) => ({
+        themes: state.themes.map((t) => (t.id === id ? { ...t, ...updates } : t)),
+      }));
+      if (theme) get().recalculatePillarAverage(theme.pillarId);
+
+      // API call
+      const result = await themesAPI.update(id, updates);
+
+      // Update with server response
+      set((state) => ({
+        themes: state.themes.map((t) => (t.id === id ? result : t)),
+      }));
+      if (theme) get().recalculatePillarAverage(theme.pillarId);
+
+      return result;
+    } catch (error) {
+      // Rollback optimistic update
+      if (oldTheme) {
+        set((state) => ({
+          themes: state.themes.map((t) => (t.id === id ? oldTheme : t)),
+        }));
+        get().recalculatePillarAverage(oldTheme.pillarId);
+      }
+      set({ error: error instanceof APIError ? error.message : 'Failed to update theme' });
+      throw error;
+    } finally {
+      set({ isSyncing: false });
+    }
+  },
+
+  deleteTheme: async (id) => {
+    const theme = get().themes.find((t) => t.id === id);
+    const oldState = { themes: get().themes, tasks: get().tasks };
+    try {
+      set({ isSyncing: true, error: null });
+
+      // Optimistic update
+      set((state) => ({
+        themes: state.themes.filter((t) => t.id !== id),
+        tasks: state.tasks.filter((t) => t.themeId !== id),
+      }));
+      if (theme) get().recalculatePillarAverage(theme.pillarId);
+
+      // API call
+      await themesAPI.delete(id);
+    } catch (error) {
+      // Rollback optimistic update
+      set({
+        themes: oldState.themes,
+        tasks: oldState.tasks,
+        error: error instanceof APIError ? error.message : 'Failed to delete theme',
+      });
+      const theme = oldState.themes.find((t) => t.id === id);
+      if (theme) get().recalculatePillarAverage(theme.pillarId);
+      throw error;
+    } finally {
+      set({ isSyncing: false });
+    }
+  },
+
   toggleThemeSelection: (id) => {
     set((state) => ({
       selectedThemeIds: state.selectedThemeIds.includes(id)
@@ -245,84 +438,195 @@ export const useLifeOSStore = create<LifeOSState>((set, get) => ({
         : [...state.selectedThemeIds, id],
     }));
   },
-  
+
   selectSingleTheme: (id) => {
     set({ selectedThemeIds: [id] });
   },
-  
-  addTheme: (theme) => {
-    const newTheme = { ...theme, id: generateId() };
-    set((state) => ({ themes: [...state.themes, newTheme] }));
-    get().recalculatePillarAverage(theme.pillarId);
-  },
-  
-  updateTheme: (id, updates) => {
-    const theme = get().themes.find((t) => t.id === id);
-    set((state) => ({
-      themes: state.themes.map((t) => (t.id === id ? { ...t, ...updates } : t)),
-    }));
-    if (theme) {
-      get().recalculatePillarAverage(theme.pillarId);
+
+  // Task actions with API integration
+  addTask: async (task) => {
+    const optimisticTask = { ...task, id: generateId() } as Task;
+    try {
+      set({ isSyncing: true, error: null });
+
+      // Optimistic update
+      set((state) => ({ tasks: [...state.tasks, optimisticTask] }));
+
+      // API call
+      const result = await tasksAPI.create(task);
+
+      // Replace optimistic with real
+      set((state) => ({
+        tasks: state.tasks.map((t) => (t.id === optimisticTask.id ? result : t)),
+      }));
+
+      return result;
+    } catch (error) {
+      // Rollback optimistic update
+      set((state) => ({
+        tasks: state.tasks.filter((t) => t.id !== optimisticTask.id),
+        error: error instanceof APIError ? error.message : 'Failed to create task',
+      }));
+      throw error;
+    } finally {
+      set({ isSyncing: false });
     }
   },
-  
-  deleteTheme: (id) => {
-    const theme = get().themes.find((t) => t.id === id);
-    set((state) => ({
-      themes: state.themes.filter((t) => t.id !== id),
-      tasks: state.tasks.filter((t) => t.themeId !== id),
-    }));
-    if (theme) {
-      get().recalculatePillarAverage(theme.pillarId);
+
+  updateTask: async (id, updates) => {
+    const oldTask = get().tasks.find((t) => t.id === id);
+    try {
+      set({ isSyncing: true, error: null });
+
+      // Optimistic update
+      set((state) => ({
+        tasks: state.tasks.map((t) => (t.id === id ? { ...t, ...updates } : t)),
+      }));
+
+      // API call
+      const result = await tasksAPI.update(id, updates);
+
+      // Update with server response
+      set((state) => ({
+        tasks: state.tasks.map((t) => (t.id === id ? result : t)),
+      }));
+
+      return result;
+    } catch (error) {
+      // Rollback optimistic update
+      if (oldTask) {
+        set((state) => ({
+          tasks: state.tasks.map((t) => (t.id === id ? oldTask : t)),
+        }));
+      }
+      set({ error: error instanceof APIError ? error.message : 'Failed to update task' });
+      throw error;
+    } finally {
+      set({ isSyncing: false });
     }
   },
-  
-  addTask: (task) => {
-    const newTask = { ...task, id: generateId() };
-    set((state) => ({ tasks: [...state.tasks, newTask] }));
+
+  deleteTask: async (id) => {
+    const oldTasks = get().tasks;
+    try {
+      set({ isSyncing: true, error: null });
+
+      // Optimistic update
+      set((state) => ({
+        tasks: state.tasks.filter((t) => t.id !== id),
+        selectedTaskId: state.selectedTaskId === id ? null : state.selectedTaskId,
+      }));
+
+      // API call
+      await tasksAPI.delete(id);
+    } catch (error) {
+      // Rollback optimistic update
+      set({
+        tasks: oldTasks,
+        error: error instanceof APIError ? error.message : 'Failed to delete task',
+      });
+      throw error;
+    } finally {
+      set({ isSyncing: false });
+    }
   },
-  
-  updateTask: (id, updates) => {
-    set((state) => ({
-      tasks: state.tasks.map((t) => (t.id === id ? { ...t, ...updates } : t)),
-    }));
-  },
-  
-  deleteTask: (id) => {
-    set((state) => ({
-      tasks: state.tasks.filter((t) => t.id !== id),
-      selectedTaskId: state.selectedTaskId === id ? null : state.selectedTaskId,
-    }));
-  },
-  
+
   selectTask: (id) => set({ selectedTaskId: id }),
-  
-  reorderTasks: (themeId, tasks) => {
-    set((state) => ({
-      tasks: state.tasks.map((t) => {
-        if (t.themeId === themeId) {
-          const reordered = tasks.find((rt) => rt.id === t.id);
+
+  reorderTasks: async (themeId, taskIds) => {
+    const oldTasks = get().tasks;
+    try {
+      set({ isSyncing: true, error: null });
+
+      // Optimistic update - update ranks
+      const reorderedTasks = taskIds.map((id, index) => {
+        const task = get().tasks.find((t) => t.id === id);
+        return task ? { ...task, rank: index } : null;
+      }).filter(Boolean) as Task[];
+
+      set((state) => ({
+        tasks: state.tasks.map((t) => {
+          const reordered = reorderedTasks.find((rt) => rt.id === t.id);
           return reordered || t;
-        }
-        return t;
-      }),
-    }));
+        }),
+      }));
+
+      // API call
+      const result = await tasksAPI.reorder(themeId, taskIds);
+
+      // Update with server response
+      set((state) => ({
+        tasks: state.tasks.map((t) => {
+          const updated = result.find((rt) => rt.id === t.id);
+          return updated || t;
+        }),
+      }));
+
+      return result;
+    } catch (error) {
+      // Rollback optimistic update
+      set({
+        tasks: oldTasks,
+        error: error instanceof APIError ? error.message : 'Failed to reorder tasks',
+      });
+      throw error;
+    } finally {
+      set({ isSyncing: false });
+    }
   },
-  
+
+  // Data fetching
+  fetchPillars: async () => {
+    try {
+      set({ isLoading: true, error: null });
+      const pillars = await pillarsAPI.getAll();
+      set({ pillars });
+    } catch (error) {
+      set({ error: error instanceof APIError ? error.message : 'Failed to fetch pillars' });
+    } finally {
+      set({ isLoading: false });
+    }
+  },
+
+  fetchThemes: async (pillarId?: string) => {
+    try {
+      set({ isLoading: true, error: null });
+      const themes = await themesAPI.getAll(pillarId);
+      set({ themes });
+    } catch (error) {
+      set({ error: error instanceof APIError ? error.message : 'Failed to fetch themes' });
+    } finally {
+      set({ isLoading: false });
+    }
+  },
+
+  fetchTasks: async (themeId?: string, status?: 'open' | 'done') => {
+    try {
+      set({ isLoading: true, error: null });
+      const tasks = await tasksAPI.getAll(themeId, status);
+      set({ tasks });
+    } catch (error) {
+      set({ error: error instanceof APIError ? error.message : 'Failed to fetch tasks' });
+    } finally {
+      set({ isLoading: false });
+    }
+  },
+
+  // Computed
   getThemesByPillar: (pillarId) => {
     return get().themes.filter((t) => t.pillarId === pillarId);
   },
-  
+
   getTasksByTheme: (themeId) => {
     return get().tasks.filter((t) => t.themeId === themeId).sort((a, b) => a.rank - b.rank);
   },
-  
+
   recalculatePillarAverage: (pillarId) => {
     const themes = get().themes.filter((t) => t.pillarId === pillarId);
     const avg = themes.length > 0
       ? themes.reduce((sum, t) => sum + t.ratingPercent, 0) / themes.length
       : 0;
-    
+
     set((state) => ({
       pillars: state.pillars.map((p) =>
         p.id === pillarId ? { ...p, avgPercent: Math.round(avg) } : p

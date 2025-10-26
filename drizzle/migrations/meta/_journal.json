@@ -15,6 +15,13 @@
       "when": 1761385941519,
       "tag": "0001_steep_warstar",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1730000000000,
+      "tag": "0002_life_planner_tables",
+      "breakpoints": true
     }
   ]
 }

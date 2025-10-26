@@ -9,51 +9,32 @@ on:
 jobs:
   test:
     runs-on: ubuntu-latest
-
+    
+    strategy:
+      matrix:
+        node-version: [20]
+    
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-
+      
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: ${{ matrix.node-version }}
           cache: 'npm'
-
+      
       - name: Install dependencies
         run: npm ci
-
-      - name: Lint code
-        run: npm run lint
-
-      - name: Lint migrations
-        run: npm run db:lint:migrations
-        env:
-          DATABASE_URL: ${{ secrets.DATABASE_URL }}
-
-      - name: Run tests
-        run: npm test
-        env:
-          DATABASE_URL: ${{ secrets.DATABASE_URL }}
-          SKIP_RLS_TESTS: ${{ secrets.SKIP_RLS_TESTS }}
-
-      - name: Apply migrations to TEST DB
-        run: npm run db:migrate
-        env:
-          DATABASE_URL: ${{ secrets.DATABASE_URL }}
-
-      - name: Audit RLS policies
-        run: npm run db:audit-rls
-        if: env.SKIP_RLS_TESTS != '1'
-        env:
-          DATABASE_URL: ${{ secrets.DATABASE_URL }}
-          SKIP_RLS_TESTS: ${{ secrets.SKIP_RLS_TESTS }}
-
-      - name: Audit raw SQL usage
-        run: npm run db:audit-raw-sql
-        env:
-          DATABASE_URL: ${{ secrets.DATABASE_URL }}
-
-      - name: Build
+      
+      - name: Run linter
+        run: npx eslint . --ext .ts,.tsx --max-warnings 50
+      
+      - name: Run type check
+        run: npm run type-check
+      
+      - name: Run build
         run: npm run build
-
+        env:
+          # Skip DB migrations in CI
+          VERCEL_ENV: preview

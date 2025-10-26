@@ -112,18 +112,19 @@ export async function POST(req: NextRequest) {
       .set({ used: true })
       .where(eq(authCodes.id, matchedCode.id));
 
-    // Get user
-    const user = await db
+    // Get or create user (for first-time login)
+    let user = await db
       .select()
       .from(users)
       .where(eq(users.email, email))
       .limit(1);
 
     if (user.length === 0) {
-      return NextResponse.json(
-        { error: 'User not found' },
-        { status: 404 }
-      );
+      console.log('📝 Creating new user for:', email);
+      const newUser = await db.insert(users).values({
+        email,
+      }).returning();
+      user = newUser;
     }
 
     // Generate JWT token

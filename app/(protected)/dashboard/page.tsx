@@ -1,11 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { MantineProvider, AppShell, Tabs } from '@mantine/core';
-import { Notifications } from '@mantine/notifications';
-import '@mantine/core/styles.css';
-import '@mantine/notifications/styles.css';
-import '@mantine/dates/styles.css';
+import { AppShell, Tabs } from '@mantine/core';
 import { IconBulb, IconRun, IconHeart } from '@tabler/icons-react';
 import { PlanTab } from '@/components/life-planner/PlanTab';
 import { DoTab } from '@/components/life-planner/DoTab';
@@ -17,9 +13,7 @@ export default function DashboardPage() {
   const [activeTab, setActiveTab] = useState<string | null>('plan');
 
   return (
-    <MantineProvider defaultColorScheme="dark">
-      <Notifications position="top-right" />
-      <AppShell padding="md" style={{ minHeight: '100vh' }}>
+    <AppShell padding="md" style={{ minHeight: '100vh' }}>
         <Tabs 
           value={activeTab} 
           onChange={setActiveTab}
@@ -52,7 +46,6 @@ export default function DashboardPage() {
 
         <CaptureTaskForm opened={captureFormOpened} onClose={() => setCaptureFormOpened(false)} />
       </AppShell>
-    </MantineProvider>
   );
 }
 

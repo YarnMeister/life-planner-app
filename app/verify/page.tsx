@@ -50,8 +50,8 @@ function VerifyPageContent() {
         color: 'green',
       });
 
-      // Redirect to home page
-      router.push('/');
+      // Redirect to dashboard
+      router.push('/dashboard');
     } catch (error) {
       notifications.show({
         title: 'Error',

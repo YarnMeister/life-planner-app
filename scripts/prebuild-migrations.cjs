@@ -5,7 +5,7 @@
 */
 const { execSync } = require('node:child_process');
 
-const env = process.env.VERCEL_ENV || process.env.NODE_ENV || 'development';
+const env = process.env.VERCEL_ENV;
 
 if (env === 'production') {
   console.log('🛠️  Production build detected. Running migration checks...');
@@ -13,7 +13,7 @@ if (env === 'production') {
   execSync('npm run db:migrate', { stdio: 'inherit' });
   console.log('✅ Migrations completed. Proceeding to app build...');
 } else {
-  console.log(`ℹ️  ${env} build detected. Skipping DB migrations.`);
+  console.log(`ℹ️  ${env || 'development'} build detected. Skipping DB migrations.`);
 }
 
 

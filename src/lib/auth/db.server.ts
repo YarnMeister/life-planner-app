@@ -6,7 +6,7 @@ import 'server-only';
 
 import { neon } from '@neondatabase/serverless';
 import { drizzle } from 'drizzle-orm/neon-http';
-import { users, authCodes, failedAuthAttempts } from '../../../drizzle/schema';
+import { users, authCodes, failedAuthAttempts, pillars, themes, tasks } from '../../../drizzle/schema';
 import { serverEnv } from '../env';
 import { mockDb, isMockDbEnabled } from './db.mock';
 
@@ -51,7 +51,7 @@ export { db };
  * Export schema for convenience
  * This keeps the import surface clean for API routes
  */
-export { users, authCodes, failedAuthAttempts };
+export { users, authCodes, failedAuthAttempts, pillars, themes, tasks };
 
 /**
  * Type exports for use in server components and API routes
