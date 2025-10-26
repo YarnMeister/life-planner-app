@@ -4,7 +4,7 @@ import { cookies } from 'next/headers';
 import { db, users } from '@/lib/auth/db.server';
 import { verifyToken } from '@/lib/auth/jwt';
 
-export async function GET(req: NextRequest) {
+export async function GET(_req: NextRequest) {
   try {
     // Get token from cookies (Next.js 15+ requires await)
     const cookieStore = await cookies();

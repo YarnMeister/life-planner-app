@@ -2,13 +2,13 @@ import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 
 /**
- * Next.js Middleware for route protection and request handling
+ * Next.js Proxy for route protection and request handling
  * 
- * This middleware runs on Edge runtime for fast response times.
+ * This proxy runs on Edge runtime for fast response times.
  * For auth protection, we rely on API routes to validate tokens.
- * This middleware primarily handles redirects for unauthenticated users.
+ * This proxy primarily handles redirects for unauthenticated users.
  */
-export function middleware(request: NextRequest) {
+export function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
   
   // Get auth token from cookies

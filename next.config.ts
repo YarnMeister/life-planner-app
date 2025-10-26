@@ -1,4 +1,5 @@
 import type { NextConfig } from 'next';
+import bundleAnalyzer from '@next/bundle-analyzer';
 
 const nextConfig: NextConfig = {
   /* Next.js config options here */
@@ -12,7 +13,7 @@ const nextConfig: NextConfig = {
 };
 
 // Use the proper @next/bundle-analyzer wrapper pattern
-const withBundleAnalyzer = require('@next/bundle-analyzer')({
+const withBundleAnalyzer = bundleAnalyzer({
   enabled: process.env.ANALYZE === 'true',
 });
 

@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { serialize } from 'cookie';
 
-export async function POST(req: NextRequest) {
+export async function POST(_req: NextRequest) {
   try {
     // Clear the auth token cookie
     const isProduction = process.env.NODE_ENV === 'production';

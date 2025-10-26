@@ -9,7 +9,6 @@
  */
 
 import { users, authCodes, failedAuthAttempts } from '../../../drizzle/schema';
-import { eq, and, or, gte } from 'drizzle-orm';
 
 // In-memory storage
 const mockUsers: Array<typeof users.$inferSelect> = [];
