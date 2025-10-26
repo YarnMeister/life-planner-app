@@ -5,7 +5,7 @@ import { db, authCodes, users } from '@/lib/auth/db.server';
 import { generateAuthCode, hashAuthCode } from '@/lib/auth/jwt';
 import { sendAuthCode } from '@/lib/auth/email';
 import { normalizeEmail } from '@/lib/auth/utils';
-import { serverEnv } from '@/lib/env';
+import { serverEnv, isDevBypassEnabled, getDevBypassCode } from '@/lib/env';
 
 const requestSchema = z.object({
   email: z.string().email('Invalid email address'),
@@ -52,8 +52,23 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Generate new auth code (plaintext to send via email)
-    const code = generateAuthCode();
+    // Check if dev bypass is enabled
+    const devBypassCode = getDevBypassCode();
+    let code: string;
+    
+    if (devBypassCode && isDevBypassEnabled()) {
+      // In dev mode with bypass, use the fixed code
+      code = devBypassCode;
+      console.log('🔧 DEV BYPASS MODE ACTIVE');
+      console.log('='.repeat(60));
+      console.log(`📧 To: ${email}`);
+      console.log(`🔑 Code: ${code} (DEV BYPASS)`);
+      console.log('='.repeat(60));
+    } else {
+      // Generate new auth code (plaintext to send via email)
+      code = generateAuthCode();
+    }
+    
     const expiresAt = new Date(Date.now() + CODE_TTL);
 
     // Hash the code before storing
@@ -81,8 +96,10 @@ export async function POST(req: NextRequest) {
       });
     }
 
-    // Send email
-    await sendAuthCode({ email, code });
+    // Send email (will be logged in console if RESEND_API_KEY not set)
+    if (!devBypassCode || !isDevBypassEnabled()) {
+      await sendAuthCode({ email, code });
+    }
 
     return NextResponse.json({
       success: true,

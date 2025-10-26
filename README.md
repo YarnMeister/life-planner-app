@@ -110,7 +110,7 @@ DATABASE_URL="postgresql://..."
 # JWT Secret (generate with: openssl rand -base64 32)
 JWT_SECRET="your-secret-key-here"
 
-# Resend Email API
+# Resend Email API (Optional in dev - see Dev Bypass below)
 RESEND_API_KEY="re_..."
 FROM_EMAIL="noreply@yourdomain.com"
 
@@ -118,6 +118,41 @@ FROM_EMAIL="noreply@yourdomain.com"
 AUTH_RATE_LIMIT_WINDOW_MS=300000  # 5 minutes
 AUTH_RATE_LIMIT_MAX=3              # 3 attempts per window
 AUTH_CODE_TTL_MINUTES=10           # Code expires in 10 minutes
+```
+
+#### 🔧 Development Bypass (No Resend Account Needed!)
+
+**For local development without a Resend account**, add these to your `.env.local`:
+
+```env
+# Development Bypass - Use a fixed code for testing
+DEV_BYPASS_CODE=123456
+DEV_TEST_EMAIL=test@example.com
+```
+
+**How it works:**
+1. When `DEV_BYPASS_CODE` is set, you can login with ANY email using that code
+2. No emails are sent - the code is shown in the terminal
+3. Perfect for testing without email service setup
+4. **SECURITY:** Automatically disabled in production (will throw error if set)
+
+**Testing:**
+```bash
+npm run dev
+
+# Navigate to http://localhost:3000/login
+# Enter any email (or your DEV_TEST_EMAIL)
+# Use code: 123456 (or whatever you set)
+# ✅ Login successful!
+```
+
+**Terminal Output:**
+```
+🔧 DEV BYPASS MODE ACTIVE
+============================================================
+📧 To: test@example.com
+🔑 Code: 123456 (DEV BYPASS)
+============================================================
 ```
 
 ### 4. Database Setup
@@ -393,6 +428,21 @@ Vercel will automatically:
 - ✅ Environment variable validation
 - ✅ Server-only database access
 - ✅ SQL injection prevention (Drizzle ORM)
+- ✅ Development bypass blocked in production
+
+### Development vs Production
+
+**Development Mode:**
+- Optional Resend API key (can use `DEV_BYPASS_CODE`)
+- Bypass code works for any email
+- Codes logged to console for easy testing
+- Rate limiting still enforced
+
+**Production Mode:**
+- Resend API key REQUIRED
+- `DEV_BYPASS_CODE` will throw error if set
+- All security features fully active
+- Real email delivery only
 
 ---
 

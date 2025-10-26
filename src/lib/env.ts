@@ -11,9 +11,13 @@ const serverSchema = z.object({
   // JWT
   JWT_SECRET: z.string().min(32, 'JWT_SECRET must be at least 32 characters'),
   
-  // Email (Resend)
-  RESEND_API_KEY: z.string().min(1, 'RESEND_API_KEY is required'),
+  // Email (Resend) - Optional in dev/test with bypass
+  RESEND_API_KEY: z.string().optional(),
   FROM_EMAIL: z.string().email('FROM_EMAIL must be a valid email').default('noreply@example.com'),
+  
+  // Development/Test Bypass (NEVER use in production)
+  DEV_BYPASS_CODE: z.string().optional(),
+  DEV_TEST_EMAIL: z.string().email().optional(),
   
   // Auth configuration (optional with defaults)
   AUTH_RATE_LIMIT_WINDOW_MS: z.string().default('300000'),
@@ -28,6 +32,18 @@ const serverSchema = z.object({
   PROD_DATABASE_URL: z.string().url().optional(),
   POSTGRES_URL: z.string().url().optional(),
   VERCEL_POSTGRES_URL: z.string().url().optional(),
+}).refine((data) => {
+  // In production, RESEND_API_KEY is required
+  if (data.NODE_ENV === 'production' && !data.RESEND_API_KEY) {
+    return false;
+  }
+  // DEV_BYPASS_CODE should NEVER be used in production
+  if (data.NODE_ENV === 'production' && data.DEV_BYPASS_CODE) {
+    throw new Error('DEV_BYPASS_CODE must not be set in production!');
+  }
+  return true;
+}, {
+  message: 'RESEND_API_KEY is required in production',
 });
 
 /**
@@ -48,6 +64,8 @@ export const serverEnv = serverSchema.parse({
   JWT_SECRET: process.env.JWT_SECRET,
   RESEND_API_KEY: process.env.RESEND_API_KEY,
   FROM_EMAIL: process.env.FROM_EMAIL,
+  DEV_BYPASS_CODE: process.env.DEV_BYPASS_CODE,
+  DEV_TEST_EMAIL: process.env.DEV_TEST_EMAIL,
   AUTH_RATE_LIMIT_WINDOW_MS: process.env.AUTH_RATE_LIMIT_WINDOW_MS,
   AUTH_RATE_LIMIT_MAX: process.env.AUTH_RATE_LIMIT_MAX,
   AUTH_CODE_TTL_MINUTES: process.env.AUTH_CODE_TTL_MINUTES,
@@ -57,6 +75,33 @@ export const serverEnv = serverSchema.parse({
   POSTGRES_URL: process.env.POSTGRES_URL,
   VERCEL_POSTGRES_URL: process.env.VERCEL_POSTGRES_URL,
 });
+
+/**
+ * Helper to check if dev bypass mode is enabled
+ * Only works in development/test, never in production
+ */
+export function isDevBypassEnabled(): boolean {
+  return (
+    (serverEnv.NODE_ENV === 'development' || serverEnv.NODE_ENV === 'test') &&
+    !!serverEnv.DEV_BYPASS_CODE
+  );
+}
+
+/**
+ * Get the dev bypass code if enabled
+ */
+export function getDevBypassCode(): string | null {
+  return isDevBypassEnabled() ? serverEnv.DEV_BYPASS_CODE! : null;
+}
+
+/**
+ * Get the dev test email if set
+ */
+export function getDevTestEmail(): string | null {
+  return isDevBypassEnabled() && serverEnv.DEV_TEST_EMAIL 
+    ? serverEnv.DEV_TEST_EMAIL 
+    : null;
+}
 
 /**
  * Client environment variables
