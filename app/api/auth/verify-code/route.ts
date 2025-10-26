@@ -64,6 +64,19 @@ export async function POST(req: NextRequest) {
         )
       );
 
+    console.log('🔍 Debug verify-code:');
+    console.log('  Email:', email);
+    console.log('  Code entered:', code);
+    console.log('  Valid codes found:', validCodes.length);
+    if (validCodes.length > 0) {
+      console.log('  First code details:', {
+        email: validCodes[0].email,
+        used: validCodes[0].used,
+        expiresAt: validCodes[0].expiresAt,
+        expired: validCodes[0].expiresAt < new Date()
+      });
+    }
+
     if (validCodes.length === 0) {
       return NextResponse.json(
         { error: 'Invalid or expired authentication code' },
