@@ -35,10 +35,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         credentials: 'include',
       });
 
+      console.log('Auth /me response:', response.status, response.statusText);
+
       if (response.ok) {
         const data = await response.json();
         setUser(data.user);
       } else {
+        // 401 is expected when not authenticated
+        if (response.status !== 401) {
+          console.error('Unexpected /me response:', response.status);
+        }
         setUser(null);
       }
     } catch (error) {
