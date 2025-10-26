@@ -27,9 +27,8 @@ let failedAttemptIdCounter = 1;
 function evaluateCondition(item: any, condition: any): boolean {
   if (!condition) return true;
   
-  // Handle and() - has children array
+  // Handle and() - has children array property named "_"
   if (condition?._ && Array.isArray(condition._)) {
-    // This is an and() condition with multiple children
     return condition._.every((child: any) => evaluateCondition(item, child));
   }
   
@@ -38,44 +37,55 @@ function evaluateCondition(item: any, condition: any): boolean {
     return condition.conditions.some((child: any) => evaluateCondition(item, child));
   }
   
-  // Handle eq() - check if left side matches item field and right side matches value
-  if (condition?.left && condition?.right !== undefined) {
-    const fieldName = condition.left?.name || condition.left?.fieldName;
-    const compareValue = condition.right?.value ?? condition.right;
-    
-    if (fieldName && item[fieldName] !== undefined) {
-      return item[fieldName] === compareValue;
-    }
+  // Handle Drizzle SQL conditions - they have a structure like:
+  // { left: { name: 'fieldName' }, right: { value: 'compareValue' }, operator: '=' }
+  // BUT the objects are complex with circular refs, so we need to extract carefully
+  
+  // Try to extract field name from various possible structures
+  let fieldName: string | undefined;
+  let compareValue: any;
+  let operator: string | undefined;
+  
+  // Extract field name
+  if (condition?.left) {
+    fieldName = condition.left.name || condition.left.fieldName || condition.left._?.name;
   }
   
-  // Handle gte() for date comparisons
-  if (condition?.operator === '>=' || (condition?.left && condition?.right && condition?.operator)) {
-    const fieldName = condition.left?.name || condition.left?.fieldName;
-    const compareValue = condition.right?.value ?? condition.right;
-    
-    if (fieldName && item[fieldName] !== undefined) {
-      // Handle date comparisons
-      if (compareValue instanceof Date || item[fieldName] instanceof Date) {
-        const itemDate = new Date(item[fieldName]).getTime();
-        const compareDate = new Date(compareValue).getTime();
-        
-        if (condition.operator === '>=') return itemDate >= compareDate;
-        if (condition.operator === '>') return itemDate > compareDate;
-        if (condition.operator === '<=') return itemDate <= compareDate;
-        if (condition.operator === '<') return itemDate < compareDate;
-      }
+  // Extract value to compare
+  if (condition?.right !== undefined) {
+    compareValue = condition.right.value ?? condition.right.queryChunks?.[0] ?? condition.right;
+  }
+  
+  // Extract operator
+  operator = condition?.operator;
+  
+  // If we found a field name and value, do the comparison
+  if (fieldName && item[fieldName] !== undefined && compareValue !== undefined) {
+    // Handle date comparisons for gte/lte
+    if (compareValue instanceof Date || item[fieldName] instanceof Date) {
+      const itemDate = new Date(item[fieldName]).getTime();
+      const compareDate = new Date(compareValue).getTime();
       
-      // Handle numeric/string comparisons
-      if (condition.operator === '>=') return item[fieldName] >= compareValue;
-      if (condition.operator === '>') return item[fieldName] > compareValue;
-      if (condition.operator === '<=') return item[fieldName] <= compareValue;
-      if (condition.operator === '<') return item[fieldName] < compareValue;
-      if (condition.operator === '=') return item[fieldName] === compareValue;
+      if (operator === '>=') return itemDate >= compareDate;
+      if (operator === '>') return itemDate > compareDate;
+      if (operator === '<=') return itemDate <= compareDate;
+      if (operator === '<') return itemDate < compareDate;
+      if (operator === '=' || !operator) return item[fieldName] === compareValue;
     }
+    
+    // Handle regular comparisons
+    if (operator === '>=') return item[fieldName] >= compareValue;
+    if (operator === '>') return item[fieldName] > compareValue;
+    if (operator === '<=') return item[fieldName] <= compareValue;
+    if (operator === '<') return item[fieldName] < compareValue;
+    if (operator === '=' || !operator) return item[fieldName] === compareValue;
   }
   
-  // Default: include item if we can't parse condition
-  console.warn('Mock DB: Unhandled condition structure:', JSON.stringify(condition, null, 2));
+  // Default: include all items if we can't parse the condition
+  // This is safer than excluding items
+  if (process.env.NODE_ENV !== 'production') {
+    console.warn('Mock DB: Could not parse condition. Field:', fieldName, 'Operator:', operator);
+  }
   return true;
 }
 
