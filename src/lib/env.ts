@@ -67,7 +67,11 @@ const clientSchema = z.object({
  * Only accessible on the server side
  */
 export const serverEnv = serverSchema.parse({
-  DATABASE_URL: process.env.DATABASE_URL || process.env.PROD_DATABASE_URL || process.env.POSTGRES_URL || process.env.VERCEL_POSTGRES_URL,
+  // In production (VERCEL_ENV=production), prioritize PROD_DATABASE_URL
+  // Otherwise use DATABASE_URL for local dev
+  DATABASE_URL: process.env.VERCEL_ENV === 'production'
+    ? (process.env.PROD_DATABASE_URL || process.env.POSTGRES_URL || process.env.VERCEL_POSTGRES_URL || process.env.DATABASE_URL)
+    : (process.env.DATABASE_URL || process.env.PROD_DATABASE_URL || process.env.POSTGRES_URL || process.env.VERCEL_POSTGRES_URL),
   JWT_SECRET: process.env.JWT_SECRET,
   RESEND_API_KEY: process.env.RESEND_API_KEY,
   FROM_EMAIL: process.env.FROM_EMAIL,
