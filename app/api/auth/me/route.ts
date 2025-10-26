@@ -27,6 +27,7 @@ export async function GET(_req: NextRequest) {
     }
 
     // Get current user from database
+    console.log('🔍 Looking up user with ID:', payload.userId);
     const user = await db
       .select({
         id: users.id,
@@ -38,10 +39,19 @@ export async function GET(_req: NextRequest) {
       .where(eq(users.id, payload.userId))
       .limit(1);
 
+    console.log('🔍 Found users:', user.length);
+
     if (user.length === 0) {
+      console.error('❌ User not found in DB. Token userId:', payload.userId);
+      // Clear the invalid cookie
       return NextResponse.json(
-        { error: 'User not found' },
-        { status: 404 }
+        { error: 'Not authenticated' },
+        { 
+          status: 401,
+          headers: {
+            'Set-Cookie': 'auth-token=; Path=/; HttpOnly; Max-Age=0'
+          }
+        }
       );
     }
 

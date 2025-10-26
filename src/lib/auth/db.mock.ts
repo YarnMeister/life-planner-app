@@ -119,17 +119,30 @@ export const mockDb = {
             return {
               limit(count: number) {
                 let data: any[];
+                let tableName = 'unknown';
                 if (table === users) {
                   data = mockUsers;
+                  tableName = 'users';
                 } else if (table === authCodes) {
                   data = mockAuthCodes;
+                  tableName = 'authCodes';
                 } else if (table === failedAuthAttempts) {
                   data = mockFailedAttempts;
+                  tableName = 'failedAuthAttempts';
                 } else {
                   data = [];
                 }
 
+                if (process.env.NODE_ENV !== 'production') {
+                  console.log(`🗄️  MOCK DB: Querying ${tableName}, ${data.length} total records`);
+                }
+
                 const filtered = filterByCondition(data, condition);
+                
+                if (process.env.NODE_ENV !== 'production') {
+                  console.log(`🗄️  MOCK DB: After filter, ${filtered.length} records match`);
+                }
+                
                 return Promise.resolve(filtered.slice(0, count));
               },
               async then(resolve: any) {
