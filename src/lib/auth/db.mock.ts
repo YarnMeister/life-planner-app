@@ -28,56 +28,58 @@ let failedAttemptIdCounter = 1;
 function evaluateCondition(item: any, condition: any): boolean {
   if (!condition) return true;
   
-  // Handle eq() conditions
-  if (condition.sql && typeof condition.sql === 'string') {
-    const sqlStr = condition.sql.toString();
+  // Handle Drizzle SQL conditions by inspecting the structure
+  const conditionType = condition?._?.$brand;
+  
+  // Handle and() - has children array
+  if (condition?._ && Array.isArray(condition._)) {
+    // This is an and() condition with multiple children
+    return condition._.every((child: any) => evaluateCondition(item, child));
+  }
+  
+  // Handle or() - similar structure
+  if (condition?.operator === 'or' && Array.isArray(condition?.conditions)) {
+    return condition.conditions.some((child: any) => evaluateCondition(item, child));
+  }
+  
+  // Handle eq() - check if left side matches item field and right side matches value
+  if (condition?.left && condition?.right !== undefined) {
+    const fieldName = condition.left?.name || condition.left?.fieldName;
+    const compareValue = condition.right?.value ?? condition.right;
     
-    // Extract field name and check equality
-    if (sqlStr.includes(' = ')) {
-      // This is an eq() condition
-      const field = Object.keys(condition)[0] || condition.column?.name;
-      const value = condition.value?.value ?? condition.value;
-      
-      if (field && item[field] !== undefined) {
-        return item[field] === value;
-      }
-    }
-    
-    // Handle gte() for date comparisons
-    if (sqlStr.includes(' >= ')) {
-      const field = Object.keys(condition)[0] || condition.column?.name;
-      const value = condition.value?.value ?? condition.value;
-      
-      if (field && item[field] !== undefined) {
-        const itemDate = new Date(item[field]).getTime();
-        const compareDate = new Date(value).getTime();
-        return itemDate >= compareDate;
-      }
+    if (fieldName && item[fieldName] !== undefined) {
+      return item[fieldName] === compareValue;
     }
   }
   
-  // Handle and() conditions
-  if (condition.operator === 'and' || (Array.isArray(condition) && condition.length > 1)) {
-    const conditions = Array.isArray(condition) ? condition : condition.conditions || [];
-    return conditions.every((cond: any) => evaluateCondition(item, cond));
-  }
-  
-  // Handle or() conditions  
-  if (condition.operator === 'or') {
-    const conditions = condition.conditions || [];
-    return conditions.some((cond: any) => evaluateCondition(item, cond));
-  }
-  
-  // Fallback: try to match on common fields
-  if (condition.email && item.email) {
-    return item.email === condition.email;
-  }
-  
-  if (condition.id && item.id) {
-    return item.id === condition.id;
+  // Handle gte() for date comparisons
+  if (condition?.operator === '>=' || (condition?.left && condition?.right && condition?.operator)) {
+    const fieldName = condition.left?.name || condition.left?.fieldName;
+    const compareValue = condition.right?.value ?? condition.right;
+    
+    if (fieldName && item[fieldName] !== undefined) {
+      // Handle date comparisons
+      if (compareValue instanceof Date || item[fieldName] instanceof Date) {
+        const itemDate = new Date(item[fieldName]).getTime();
+        const compareDate = new Date(compareValue).getTime();
+        
+        if (condition.operator === '>=') return itemDate >= compareDate;
+        if (condition.operator === '>') return itemDate > compareDate;
+        if (condition.operator === '<=') return itemDate <= compareDate;
+        if (condition.operator === '<') return itemDate < compareDate;
+      }
+      
+      // Handle numeric/string comparisons
+      if (condition.operator === '>=') return item[fieldName] >= compareValue;
+      if (condition.operator === '>') return item[fieldName] > compareValue;
+      if (condition.operator === '<=') return item[fieldName] <= compareValue;
+      if (condition.operator === '<') return item[fieldName] < compareValue;
+      if (condition.operator === '=') return item[fieldName] === compareValue;
+    }
   }
   
   // Default: include item if we can't parse condition
+  console.warn('Mock DB: Unhandled condition structure:', JSON.stringify(condition, null, 2));
   return true;
 }
 
@@ -86,6 +88,11 @@ function evaluateCondition(item: any, condition: any): boolean {
  */
 function filterByCondition(data: any[], condition: any): any[] {
   if (!condition) return data;
+  
+  // Debug: log condition structure in dev
+  if (process.env.NODE_ENV !== 'production') {
+    console.log('🗄️  MOCK DB: Filtering', data.length, 'items with condition type:', condition?.constructor?.name || typeof condition);
+  }
   
   return data.filter(item => {
     // Handle drizzle-orm conditions
@@ -96,16 +103,8 @@ function filterByCondition(data: any[], condition: any): any[] {
     
     // Handle object-based conditions
     if (condition && typeof condition === 'object') {
-      // eq() condition
-      if (condition.sql) {
-        return evaluateCondition(item, condition);
-      }
-      
-      // Direct field matching
-      return Object.keys(condition).every(key => {
-        if (key === 'sql' || key === 'operator') return true;
-        return item[key] === condition[key];
-      });
+      const result = evaluateCondition(item, condition);
+      return result;
     }
     
     return true;
