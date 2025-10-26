@@ -1,12 +1,28 @@
 /**
  * Seed script for Life Planner data
  * Migrates seed data from useLifeOSStore to database
- * 
- * Usage: npx ts-node scripts/seed-life-planner.ts
+ *
+ * Usage: npx tsx scripts/seed-life-planner.ts
  */
 
-import { db, pillars, themes, tasks, users } from '@/lib/auth/db.server';
+import dotenv from 'dotenv';
+import { drizzle } from 'drizzle-orm/neon-http';
+import { neon } from '@neondatabase/serverless';
 import { eq } from 'drizzle-orm';
+import * as schema from '../drizzle/schema.js';
+
+const { pillars, themes, tasks, users } = schema;
+
+// Load environment variables
+dotenv.config({ path: '.env.local' });
+
+if (!process.env.DATABASE_URL) {
+  throw new Error('DATABASE_URL is not set');
+}
+
+// Create database connection with schema
+const sql = neon(process.env.DATABASE_URL);
+const db = drizzle(sql, { schema });
 
 // Seed data - mirrors useLifeOSStore.ts
 const seedPillars = [
