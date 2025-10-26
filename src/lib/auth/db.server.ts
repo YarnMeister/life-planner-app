@@ -6,6 +6,7 @@ import 'server-only';
 
 import { neon } from '@neondatabase/serverless';
 import { drizzle } from 'drizzle-orm/neon-http';
+import * as schema from '../../../drizzle/schema';
 import { users, authCodes, failedAuthAttempts, pillars, themes, tasks } from '../../../drizzle/schema';
 import { serverEnv } from '../env';
 import { mockDb, isMockDbEnabled } from './db.mock';
@@ -32,12 +33,13 @@ if (useMockDb) {
       // Ensure proper timeout handling
     },
   });
-  
+
   /**
    * Database client instance
    * Exported as a singleton to prevent connection leaks in development
+   * Pass schema to enable query API
    */
-  db = drizzle(sql);
+  db = drizzle(sql, { schema });
 }
 
 /**
