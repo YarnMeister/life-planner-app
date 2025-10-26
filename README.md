@@ -260,12 +260,11 @@ npm run db:migrate
 # Check migration status
 npm run db:status
 
-# Verify migration integrity
-npm run db:verify-migration
-
 # Test database connection
 npm run db:test-connection
 ```
+
+> **Note:** The template doesn't include a `db:verify-migration` script by default. Once you start creating migrations specific to your schema, you can add a custom verification script in `scripts/verify-migration.cjs` to validate your tables, lookup data, and constraints. See the [Migration Guide](./docs/migrations.md) for examples.
 
 ### Schema Updates
 
