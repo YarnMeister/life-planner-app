@@ -255,7 +255,7 @@ async function seed() {
         impact: t.impact,
         status: t.status,
         rank: t.rank,
-        taskType: 'adhoc',
+        taskType: 'adhoc' as const,
       }))
     ).returning();
     console.log(`✅ Inserted ${insertedTasks.length} tasks`);
