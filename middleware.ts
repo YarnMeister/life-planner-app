@@ -22,9 +22,9 @@ export function middleware(request: NextRequest) {
   const protectedRoutes = ['/dashboard'];
   const isProtectedRoute = protectedRoutes.some(route => pathname.startsWith(route));
   
-  // If accessing a public route with a token, redirect to home
+  // If accessing a public route with a token, redirect to dashboard
   if (isPublicRoute && token) {
-    return NextResponse.redirect(new URL('/', request.url));
+    return NextResponse.redirect(new URL('/dashboard', request.url));
   }
   
   // If accessing a protected route without a token, redirect to login
