@@ -132,8 +132,7 @@ describe('Life Planner API Client', () => {
       const result = await themesAPI.getAll('p1');
       expect(result).toEqual(mockThemes);
       expect(global.fetch).toHaveBeenCalledWith(
-        expect.stringContaining('pillarId=p1'),
-        undefined
+        expect.stringContaining('pillarId=p1')
       );
     });
 
@@ -205,8 +204,7 @@ describe('Life Planner API Client', () => {
       const result = await tasksAPI.getAll('t1');
       expect(result).toEqual(mockTasks);
       expect(global.fetch).toHaveBeenCalledWith(
-        expect.stringContaining('themeId=t1'),
-        undefined
+        expect.stringContaining('themeId=t1')
       );
     });
 
@@ -223,8 +221,7 @@ describe('Life Planner API Client', () => {
       const result = await tasksAPI.getAll(undefined, 'open');
       expect(result).toEqual(mockTasks);
       expect(global.fetch).toHaveBeenCalledWith(
-        expect.stringContaining('status=open'),
-        undefined
+        expect.stringContaining('status=open')
       );
     });
 

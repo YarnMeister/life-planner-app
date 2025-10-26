@@ -4,7 +4,7 @@
  */
 
 import { eq, and } from 'drizzle-orm';
-import { tasks } from '@/drizzle/schema';
+import { tasks } from '@/lib/auth/db.server';
 import { BaseService, ValidationError } from './base.service';
 import { themesService } from './themes.service';
 
@@ -43,7 +43,7 @@ export class TasksService extends BaseService {
   async getTasks(userId: string) {
     return this.db.query.tasks.findMany({
       where: eq(tasks.userId, userId),
-      orderBy: (tasks, { asc }) => [asc(tasks.createdAt)],
+      orderBy: (tasks: any, { asc }: any) => [asc(tasks.createdAt)],
     });
   }
 
@@ -65,7 +65,7 @@ export class TasksService extends BaseService {
   async getTasksByTheme(themeId: string, userId: string) {
     return this.db.query.tasks.findMany({
       where: and(eq(tasks.themeId, themeId), eq(tasks.userId, userId)),
-      orderBy: (tasks, { asc }) => [asc(tasks.rank)],
+      orderBy: (tasks: any, { asc }: any) => [asc(tasks.rank)],
     });
   }
 
@@ -83,7 +83,7 @@ export class TasksService extends BaseService {
 
     // Get current max rank for this theme
     const themeTasks = await this.getTasksByTheme(input.themeId, userId);
-    const maxRank = themeTasks.length > 0 ? Math.max(...themeTasks.map(t => t.rank)) : -1;
+    const maxRank = themeTasks.length > 0 ? Math.max(...themeTasks.map((t: any) => t.rank)) : -1;
 
     const result = await this.db
       .insert(tasks)
@@ -112,8 +112,8 @@ export class TasksService extends BaseService {
    * Update a task
    */
   async updateTask(id: string, input: UpdateTaskInput, userId: string) {
-    // Verify ownership
-    const task = await this.getTask(id, userId);
+    // Verify ownership (getTask throws if not found or not owned)
+    await this.getTask(id, userId);
 
     // Validate input
     if (input.title !== undefined && input.title.trim().length === 0) {
@@ -189,7 +189,7 @@ export class TasksService extends BaseService {
   async getTasksByStatus(status: 'open' | 'done', userId: string) {
     return this.db.query.tasks.findMany({
       where: and(eq(tasks.status, status), eq(tasks.userId, userId)),
-      orderBy: (tasks, { asc }) => [asc(tasks.createdAt)],
+      orderBy: (tasks: any, { asc }: any) => [asc(tasks.createdAt)],
     });
   }
 }

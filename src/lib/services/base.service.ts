@@ -3,7 +3,7 @@
  * Provides common functionality for all service classes
  */
 
-import { db } from '@/src/lib/auth/db.server';
+import { db } from '@/lib/auth/db.server';
 
 export class BaseService {
   protected db = db;

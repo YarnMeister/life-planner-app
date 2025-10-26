@@ -6,8 +6,8 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { getSession } from '@/src/lib/auth/session';
-import { themesService, getErrorStatus, getErrorMessage } from '@/src/lib/services';
+import { getSession } from '@/lib/auth/session';
+import { themesService, getErrorStatus, getErrorMessage } from '@/lib/services';
 import { z } from 'zod';
 
 const updateThemeSchema = z.object({
@@ -22,7 +22,7 @@ const updateThemeSchema = z.object({
  */
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await getSession();
@@ -33,7 +33,8 @@ export async function GET(
       );
     }
 
-    const theme = await themesService.getThemeWithTasks(params.id, session.user.id);
+    const { id } = await params;
+    const theme = await themesService.getThemeWithTasks(id, session.user.id);
     return NextResponse.json({ data: theme });
   } catch (error) {
     console.error('Error fetching theme:', error);
@@ -50,7 +51,7 @@ export async function GET(
  */
 export async function PATCH(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await getSession();
@@ -64,7 +65,8 @@ export async function PATCH(
     const body = await request.json();
     const validatedData = updateThemeSchema.parse(body);
 
-    const theme = await themesService.updateTheme(params.id, validatedData, session.user.id);
+    const { id } = await params;
+    const theme = await themesService.updateTheme(id, validatedData, session.user.id);
     return NextResponse.json({ data: theme });
   } catch (error) {
     if (error instanceof z.ZodError) {
@@ -88,7 +90,7 @@ export async function PATCH(
  */
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await getSession();
@@ -99,7 +101,8 @@ export async function DELETE(
       );
     }
 
-    await themesService.deleteTheme(params.id, session.user.id);
+    const { id } = await params;
+    await themesService.deleteTheme(id, session.user.id);
     return NextResponse.json({ success: true });
   } catch (error) {
     console.error('Error deleting theme:', error);

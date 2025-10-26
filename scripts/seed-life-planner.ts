@@ -5,8 +5,7 @@
  * Usage: npx ts-node scripts/seed-life-planner.ts
  */
 
-import { db } from '@/src/lib/auth/db.server';
-import { pillars, themes, tasks, users } from '@/drizzle/schema';
+import { db, pillars, themes, tasks, users } from '@/lib/auth/db.server';
 import { eq } from 'drizzle-orm';
 
 // Seed data - mirrors useLifeOSStore.ts
@@ -231,7 +230,7 @@ async function seed() {
       seedTasksData.map(t => ({
         userId,
         pillarId: insertedPillars[t.pillarIndex].id,
-        themeId: insertedThemes.find(th => 
+        themeId: insertedThemes.find((th: any) =>
           th.pillarId === insertedPillars[t.pillarIndex].id &&
           th.name === seedThemes[t.themeIndex].name
         )!.id,

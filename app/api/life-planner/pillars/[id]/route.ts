@@ -6,8 +6,8 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { getSession } from '@/src/lib/auth/session';
-import { pillarsService, getErrorStatus, getErrorMessage } from '@/src/lib/services';
+import { getSession } from '@/lib/auth/session';
+import { pillarsService, getErrorStatus, getErrorMessage } from '@/lib/services';
 import { z } from 'zod';
 
 const updatePillarSchema = z.object({
@@ -23,7 +23,7 @@ const updatePillarSchema = z.object({
  */
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await getSession();
@@ -34,7 +34,8 @@ export async function GET(
       );
     }
 
-    const pillar = await pillarsService.getPillarWithDetails(params.id, session.user.id);
+    const { id } = await params;
+    const pillar = await pillarsService.getPillarWithDetails(id, session.user.id);
     return NextResponse.json({ data: pillar });
   } catch (error) {
     console.error('Error fetching pillar:', error);
@@ -51,7 +52,7 @@ export async function GET(
  */
 export async function PATCH(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await getSession();
@@ -65,7 +66,8 @@ export async function PATCH(
     const body = await request.json();
     const validatedData = updatePillarSchema.parse(body);
 
-    const pillar = await pillarsService.updatePillar(params.id, validatedData, session.user.id);
+    const { id } = await params;
+    const pillar = await pillarsService.updatePillar(id, validatedData, session.user.id);
     return NextResponse.json({ data: pillar });
   } catch (error) {
     if (error instanceof z.ZodError) {
@@ -89,7 +91,7 @@ export async function PATCH(
  */
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await getSession();
@@ -100,7 +102,8 @@ export async function DELETE(
       );
     }
 
-    await pillarsService.deletePillar(params.id, session.user.id);
+    const { id } = await params;
+    await pillarsService.deletePillar(id, session.user.id);
     return NextResponse.json({ success: true });
   } catch (error) {
     console.error('Error deleting pillar:', error);

@@ -6,8 +6,8 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { getSession } from '@/src/lib/auth/session';
-import { tasksService, getErrorStatus, getErrorMessage } from '@/src/lib/services';
+import { getSession } from '@/lib/auth/session';
+import { tasksService, getErrorStatus, getErrorMessage } from '@/lib/services';
 import { z } from 'zod';
 
 const updateTaskSchema = z.object({
@@ -29,7 +29,7 @@ const updateTaskSchema = z.object({
  */
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await getSession();
@@ -40,7 +40,8 @@ export async function GET(
       );
     }
 
-    const task = await tasksService.getTask(params.id, session.user.id);
+    const { id } = await params;
+    const task = await tasksService.getTask(id, session.user.id);
     return NextResponse.json({ data: task });
   } catch (error) {
     console.error('Error fetching task:', error);
@@ -57,7 +58,7 @@ export async function GET(
  */
 export async function PATCH(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await getSession();
@@ -71,7 +72,8 @@ export async function PATCH(
     const body = await request.json();
     const validatedData = updateTaskSchema.parse(body);
 
-    const task = await tasksService.updateTask(params.id, validatedData, session.user.id);
+    const { id } = await params;
+    const task = await tasksService.updateTask(id, validatedData, session.user.id);
     return NextResponse.json({ data: task });
   } catch (error) {
     if (error instanceof z.ZodError) {
@@ -95,7 +97,7 @@ export async function PATCH(
  */
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await getSession();
@@ -106,7 +108,8 @@ export async function DELETE(
       );
     }
 
-    await tasksService.deleteTask(params.id, session.user.id);
+    const { id } = await params;
+    await tasksService.deleteTask(id, session.user.id);
     return NextResponse.json({ success: true });
   } catch (error) {
     console.error('Error deleting task:', error);

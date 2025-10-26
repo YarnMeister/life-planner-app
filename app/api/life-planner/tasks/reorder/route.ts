@@ -4,8 +4,8 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { getSession } from '@/src/lib/auth/session';
-import { tasksService, getErrorStatus, getErrorMessage } from '@/src/lib/services';
+import { getSession } from '@/lib/auth/session';
+import { tasksService, getErrorStatus, getErrorMessage } from '@/lib/services';
 import { z } from 'zod';
 
 const reorderTasksSchema = z.object({

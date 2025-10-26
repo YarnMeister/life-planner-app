@@ -4,7 +4,7 @@
  */
 
 import { useCallback } from 'react';
-import { useLifeOSStore } from '@/src/store/useLifeOSStore';
+import { useLifeOSStore } from '@/store/useLifeOSStore';
 import { Pillar, Theme, Task } from '@/types';
 
 export function useLifeOS() {

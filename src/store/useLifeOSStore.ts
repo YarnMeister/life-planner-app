@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { Pillar, Theme, Task } from '@/types';
-import { pillarsAPI, themesAPI, tasksAPI, APIError } from '@/src/lib/api/life-planner.client';
+import { pillarsAPI, themesAPI, tasksAPI, APIError } from '../lib/api/life-planner.client';
 
 interface LifeOSState {
   // Data
@@ -240,10 +240,10 @@ export const useLifeOSStore = create<LifeOSState>((set, get) => ({
 
   // Pillar actions with API integration
   addPillar: async (pillar) => {
+    const optimisticPillar = { ...pillar, id: generateId(), avgPercent: 0 } as Pillar;
     try {
       set({ isSyncing: true, error: null });
       // Optimistic update
-      const optimisticPillar = { ...pillar, id: generateId(), avgPercent: 0 } as Pillar;
       set((state) => ({ pillars: [...state.pillars, optimisticPillar] }));
 
       // API call
@@ -268,9 +268,9 @@ export const useLifeOSStore = create<LifeOSState>((set, get) => ({
   },
 
   updatePillar: async (id, updates) => {
+    const oldPillar = get().pillars.find((p) => p.id === id);
     try {
       set({ isSyncing: true, error: null });
-      const oldPillar = get().pillars.find((p) => p.id === id);
 
       // Optimistic update
       set((state) => ({
@@ -301,9 +301,9 @@ export const useLifeOSStore = create<LifeOSState>((set, get) => ({
   },
 
   deletePillar: async (id) => {
+    const oldState = { pillars: get().pillars, themes: get().themes, tasks: get().tasks };
     try {
       set({ isSyncing: true, error: null });
-      const oldState = { pillars: get().pillars, themes: get().themes, tasks: get().tasks };
 
       // Optimistic update
       set((state) => ({
@@ -333,9 +333,9 @@ export const useLifeOSStore = create<LifeOSState>((set, get) => ({
 
   // Theme actions with API integration
   addTheme: async (theme) => {
+    const optimisticTheme = { ...theme, id: generateId() } as Theme;
     try {
       set({ isSyncing: true, error: null });
-      const optimisticTheme = { ...theme, id: generateId() } as Theme;
 
       // Optimistic update
       set((state) => ({ themes: [...state.themes, optimisticTheme] }));
@@ -365,10 +365,10 @@ export const useLifeOSStore = create<LifeOSState>((set, get) => ({
   },
 
   updateTheme: async (id, updates) => {
+    const theme = get().themes.find((t) => t.id === id);
+    const oldTheme = theme ? { ...theme } : null;
     try {
       set({ isSyncing: true, error: null });
-      const theme = get().themes.find((t) => t.id === id);
-      const oldTheme = theme ? { ...theme } : null;
 
       // Optimistic update
       set((state) => ({
@@ -402,10 +402,10 @@ export const useLifeOSStore = create<LifeOSState>((set, get) => ({
   },
 
   deleteTheme: async (id) => {
+    const theme = get().themes.find((t) => t.id === id);
+    const oldState = { themes: get().themes, tasks: get().tasks };
     try {
       set({ isSyncing: true, error: null });
-      const theme = get().themes.find((t) => t.id === id);
-      const oldState = { themes: get().themes, tasks: get().tasks };
 
       // Optimistic update
       set((state) => ({
@@ -445,9 +445,9 @@ export const useLifeOSStore = create<LifeOSState>((set, get) => ({
 
   // Task actions with API integration
   addTask: async (task) => {
+    const optimisticTask = { ...task, id: generateId() } as Task;
     try {
       set({ isSyncing: true, error: null });
-      const optimisticTask = { ...task, id: generateId() } as Task;
 
       // Optimistic update
       set((state) => ({ tasks: [...state.tasks, optimisticTask] }));
@@ -474,9 +474,9 @@ export const useLifeOSStore = create<LifeOSState>((set, get) => ({
   },
 
   updateTask: async (id, updates) => {
+    const oldTask = get().tasks.find((t) => t.id === id);
     try {
       set({ isSyncing: true, error: null });
-      const oldTask = get().tasks.find((t) => t.id === id);
 
       // Optimistic update
       set((state) => ({
@@ -507,9 +507,9 @@ export const useLifeOSStore = create<LifeOSState>((set, get) => ({
   },
 
   deleteTask: async (id) => {
+    const oldTasks = get().tasks;
     try {
       set({ isSyncing: true, error: null });
-      const oldTasks = get().tasks;
 
       // Optimistic update
       set((state) => ({
@@ -534,9 +534,9 @@ export const useLifeOSStore = create<LifeOSState>((set, get) => ({
   selectTask: (id) => set({ selectedTaskId: id }),
 
   reorderTasks: async (themeId, taskIds) => {
+    const oldTasks = get().tasks;
     try {
       set({ isSyncing: true, error: null });
-      const oldTasks = get().tasks;
 
       // Optimistic update - update ranks
       const reorderedTasks = taskIds.map((id, index) => {

@@ -4,8 +4,8 @@
  */
 
 import { eq, and } from 'drizzle-orm';
-import { themes, tasks } from '@/drizzle/schema';
-import { BaseService, NotFoundError, ValidationError } from './base.service';
+import { themes, tasks } from '@/lib/auth/db.server';
+import { BaseService, ValidationError } from './base.service';
 import { pillarsService } from './pillars.service';
 
 export interface CreateThemeInput {
@@ -27,7 +27,7 @@ export class ThemesService extends BaseService {
   async getThemes(userId: string) {
     return this.db.query.themes.findMany({
       where: eq(themes.userId, userId),
-      orderBy: (themes, { asc }) => [asc(themes.createdAt)],
+      orderBy: (themes: any, { asc }: any) => [asc(themes.createdAt)],
     });
   }
 
@@ -49,7 +49,7 @@ export class ThemesService extends BaseService {
   async getThemesByPillar(pillarId: string, userId: string) {
     return this.db.query.themes.findMany({
       where: and(eq(themes.pillarId, pillarId), eq(themes.userId, userId)),
-      orderBy: (themes, { asc }) => [asc(themes.createdAt)],
+      orderBy: (themes: any, { asc }: any) => [asc(themes.createdAt)],
     });
   }
 
@@ -150,7 +150,7 @@ export class ThemesService extends BaseService {
 
     const themeTasks = await this.db.query.tasks.findMany({
       where: eq(tasks.themeId, id),
-      orderBy: (tasks, { asc }) => [asc(tasks.rank)],
+      orderBy: (tasks: any, { asc }: any) => [asc(tasks.rank)],
     });
 
     return {

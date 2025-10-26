@@ -5,8 +5,8 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { getSession } from '@/src/lib/auth/session';
-import { themesService, getErrorStatus, getErrorMessage } from '@/src/lib/services';
+import { getSession } from '@/lib/auth/session';
+import { themesService, getErrorStatus, getErrorMessage } from '@/lib/services';
 import { z } from 'zod';
 
 // Validation schemas
@@ -15,8 +15,6 @@ const createThemeSchema = z.object({
   name: z.string().min(1, 'Name is required').max(100),
   ratingPercent: z.number().min(0).max(100).optional(),
 });
-
-const updateThemeSchema = createThemeSchema.partial().omit({ pillarId: true });
 
 /**
  * GET /api/life-planner/themes

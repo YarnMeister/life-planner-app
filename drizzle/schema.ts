@@ -1,4 +1,4 @@
-import { pgTable, text, timestamp, uuid, boolean, index, integer, enum as pgEnum, date, foreignKey } from 'drizzle-orm/pg-core';
+import { pgTable, text, timestamp, uuid, boolean, index, integer, pgEnum, date } from 'drizzle-orm/pg-core';
 import { sql } from 'drizzle-orm';
 
 // Minimal placeholder schema for template consumers to extend

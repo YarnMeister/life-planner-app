@@ -4,8 +4,8 @@
  */
 
 import { eq, and } from 'drizzle-orm';
-import { pillars, themes, tasks } from '@/drizzle/schema';
-import { BaseService, NotFoundError, ValidationError } from './base.service';
+import { pillars, themes, tasks } from '@/lib/auth/db.server';
+import { BaseService, ValidationError } from './base.service';
 
 export interface CreatePillarInput {
   name: string;
@@ -26,7 +26,7 @@ export class PillarsService extends BaseService {
   async getPillars(userId: string) {
     return this.db.query.pillars.findMany({
       where: eq(pillars.userId, userId),
-      orderBy: (pillars, { asc }) => [asc(pillars.createdAt)],
+      orderBy: (pillars: any, { asc }: any) => [asc(pillars.createdAt)],
     });
   }
 
@@ -75,8 +75,8 @@ export class PillarsService extends BaseService {
    * Update a pillar
    */
   async updatePillar(id: string, input: UpdatePillarInput, userId: string) {
-    // Verify ownership
-    const pillar = await this.getPillar(id, userId);
+    // Verify ownership (getPillar throws if not found or not owned)
+    await this.getPillar(id, userId);
 
     // Validate input
     if (input.name !== undefined && input.name.trim().length === 0) {
@@ -119,8 +119,8 @@ export class PillarsService extends BaseService {
    * Recalculate average percent for a pillar based on its themes
    */
   async recalculateAverage(id: string, userId: string) {
-    // Verify ownership
-    const pillar = await this.getPillar(id, userId);
+    // Verify ownership (getPillar throws if not found or not owned)
+    await this.getPillar(id, userId);
 
     // Get all themes for this pillar
     const pillarThemes = await this.db.query.themes.findMany({
@@ -131,7 +131,7 @@ export class PillarsService extends BaseService {
     const avgPercent =
       pillarThemes.length > 0
         ? Math.round(
-            pillarThemes.reduce((sum, t) => sum + t.ratingPercent, 0) /
+            pillarThemes.reduce((sum: number, t: any) => sum + t.ratingPercent, 0) /
               pillarThemes.length
           )
         : 0;
