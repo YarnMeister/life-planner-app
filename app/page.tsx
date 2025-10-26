@@ -1,7 +1,7 @@
 'use client';
 
 import { Container, Title, Text, Stack, Button, Paper, Group, Badge } from '@mantine/core';
-import { IconCode, IconDatabase, IconPalette, IconLogout, IconShieldCheck } from '@tabler/icons-react';
+import { IconCode, IconDatabase, IconPalette, IconLogout, IconShieldCheck, IconLifebuoy } from '@tabler/icons-react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 
@@ -56,21 +56,29 @@ export default function HomePage() {
           <Paper p="xl" shadow="md" radius="lg" withBorder w="100%">
             <Stack gap="lg" align="center">
               <Badge size="lg" variant="gradient" gradient={{ from: 'blue', to: 'cyan' }}>
-                🔐 Authentication Enabled
+                🚀 Life Planner Migration
               </Badge>
               
               <Title order={1} ta="center" c="blue">
-                React + Next.js + Neon Template
+                Life Planner + Next.js Template
               </Title>
               
               <Text size="lg" ta="center" c="dimmed">
-                A production-ready starter template with React, TypeScript, Drizzle ORM, 
-                PostgreSQL, Email Auth, and Mantine UI components.
+                Successfully migrated from Vite to Next.js with Mantine UI, 
+                authentication, and database integration.
               </Text>
 
               <Group justify="center" mt="md">
                 <Button 
                   size="lg" 
+                  leftSection={<IconLifebuoy size={20} />}
+                  onClick={() => router.push('/dashboard')}
+                >
+                  Open Life Planner
+                </Button>
+                <Button 
+                  size="lg" 
+                  variant="light"
                   leftSection={<IconPalette size={20} />}
                   onClick={() => router.push('/mantine-demo')}
                 >
@@ -114,18 +122,18 @@ export default function HomePage() {
 
           <Paper p="md" shadow="sm" radius="md" withBorder w="100%">
             <Stack gap="xs">
-              <Title order={5}>Quick Start</Title>
+              <Title order={5}>Migration Status</Title>
               <Text size="sm" c="dimmed">
-                1. Add your pages in <code>app/</code>
+                ✅ Next.js foundation established
               </Text>
               <Text size="sm" c="dimmed">
-                2. Create database schema in <code>drizzle/schema.ts</code>
+                ✅ Zustand store migrated
               </Text>
               <Text size="sm" c="dimmed">
-                3. Build UI with Mantine and shadcn/ui components
+                ✅ Mantine UI components ready
               </Text>
               <Text size="sm" c="dimmed">
-                4. See <code>README.md</code> for full setup instructions
+                🔄 Component migration in progress
               </Text>
             </Stack>
           </Paper>
