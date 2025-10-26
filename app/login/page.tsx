@@ -1,14 +1,16 @@
+'use client';
+
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useRouter } from 'next/navigation';
 import { Container, Paper, Title, Text, TextInput, Button, Stack } from '@mantine/core';
 import { notifications } from '@mantine/notifications';
 import { IconMail } from '@tabler/icons-react';
-import { useAuth } from '../../contexts/AuthContext';
+import { useAuth } from '@/contexts/AuthContext';
 
-export default function Login() {
+export default function LoginPage() {
   const [email, setEmail] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const navigate = useNavigate();
+  const router = useRouter();
   const { requestCode } = useAuth();
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -34,8 +36,8 @@ export default function Login() {
         color: 'green',
       });
 
-      // Navigate to verify page with email in state
-      navigate('/auth/verify', { state: { email } });
+      // Navigate to verify page with email in query
+      router.push(`/verify?email=${encodeURIComponent(email)}`);
     } catch (error) {
       notifications.show({
         title: 'Error',

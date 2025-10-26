@@ -1,12 +1,7 @@
-import type { VercelRequest, VercelResponse } from '@vercel/node';
+import { NextRequest, NextResponse } from 'next/server';
 import { serialize } from 'cookie';
 
-export default async function handler(req: VercelRequest, res: VercelResponse) {
-  // Only allow POST requests
-  if (req.method !== 'POST') {
-    return res.status(405).json({ error: 'Method not allowed' });
-  }
-
+export async function POST(_req: NextRequest) {
   try {
     // Clear the auth token cookie
     const isProduction = process.env.NODE_ENV === 'production';
@@ -18,18 +13,21 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       path: '/',
     });
 
-    res.setHeader('Set-Cookie', cookie);
-
-    return res.status(200).json({
+    const response = NextResponse.json({
       success: true,
       message: 'Successfully logged out'
     });
 
+    response.headers.set('Set-Cookie', cookie);
+
+    return response;
+
   } catch (error) {
     console.error('Logout error:', error);
-    return res.status(500).json({
-      error: 'Failed to logout'
-    });
+    return NextResponse.json(
+      { error: 'Failed to logout' },
+      { status: 500 }
+    );
   }
 }
 

@@ -1,3 +1,5 @@
+'use client';
+
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 
 export interface User {
@@ -29,14 +31,32 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const fetchCurrentUser = async () => {
     try {
+      console.log('Fetching /api/auth/me...');
       const response = await fetch('/api/auth/me', {
+        method: 'GET',
         credentials: 'include',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+
+      console.log('Auth /me response:', {
+        status: response.status,
+        statusText: response.statusText,
+        url: response.url,
+        type: response.type,
       });
 
       if (response.ok) {
         const data = await response.json();
         setUser(data.user);
       } else {
+        // 401 is expected when not authenticated
+        if (response.status !== 401) {
+          console.error('Unexpected /me response:', response.status);
+          const text = await response.text();
+          console.error('Response body:', text);
+        }
         setUser(null);
       }
     } catch (error) {
@@ -118,4 +138,3 @@ export function useAuth() {
   }
   return context;
 }
-

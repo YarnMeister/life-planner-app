@@ -1,11 +1,9 @@
 import jwt from 'jsonwebtoken';
 import crypto from 'crypto';
+import { serverEnv } from '../env';
 
-const JWT_SECRET = process.env.JWT_SECRET || 'dev-secret-change-in-production';
-
-if (!process.env.JWT_SECRET && process.env.NODE_ENV === 'production') {
-  throw new Error('JWT_SECRET environment variable is required in production');
-}
+// Use validated JWT_SECRET from centralized env
+const JWT_SECRET = serverEnv.JWT_SECRET;
 
 export interface UserPayload {
   userId: string;

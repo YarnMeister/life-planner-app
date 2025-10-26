@@ -1,16 +1,32 @@
+'use client';
+
 import { Container, Title, Text, Stack, Button, Paper, Group, Badge } from '@mantine/core';
 import { IconCode, IconDatabase, IconPalette, IconLogout, IconShieldCheck } from '@tabler/icons-react';
-import { useNavigate } from 'react-router-dom';
-import { useAuth } from '../contexts/AuthContext';
+import { useRouter } from 'next/navigation';
+import { useAuth } from '@/contexts/AuthContext';
 
-const Index = () => {
-  const navigate = useNavigate();
-  const { user, logout } = useAuth();
+export default function HomePage() {
+  const router = useRouter();
+  const { user, logout, isLoading } = useAuth();
 
   const handleLogout = async () => {
     await logout();
-    navigate('/auth/login');
+    router.push('/login');
   };
+
+  // Show loading state while checking auth
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <Text>Loading...</Text>
+      </div>
+    );
+  }
+
+  // Middleware handles redirect, but show nothing if user is null
+  if (!user) {
+    return null;
+  }
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-gray-50">
@@ -44,7 +60,7 @@ const Index = () => {
               </Badge>
               
               <Title order={1} ta="center" c="blue">
-                React + Vite + Neon Template
+                React + Next.js + Neon Template
               </Title>
               
               <Text size="lg" ta="center" c="dimmed">
@@ -56,7 +72,7 @@ const Index = () => {
                 <Button 
                   size="lg" 
                   leftSection={<IconPalette size={20} />}
-                  onClick={() => navigate('/mantine-demo')}
+                  onClick={() => router.push('/mantine-demo')}
                 >
                   View Mantine Demo
                 </Button>
@@ -70,7 +86,7 @@ const Index = () => {
                 <IconCode size={32} color="#3B82F6" />
                 <Title order={4}>Modern Stack</Title>
                 <Text size="sm" ta="center" c="dimmed">
-                  Built with React 18, TypeScript, and Vite for blazing fast development
+                  Built with React 18, TypeScript, and Next.js for blazing fast development
                 </Text>
               </Stack>
             </Paper>
@@ -100,7 +116,7 @@ const Index = () => {
             <Stack gap="xs">
               <Title order={5}>Quick Start</Title>
               <Text size="sm" c="dimmed">
-                1. Add your pages in <code>src/pages/</code>
+                1. Add your pages in <code>app/</code>
               </Text>
               <Text size="sm" c="dimmed">
                 2. Create database schema in <code>drizzle/schema.ts</code>
@@ -117,8 +133,5 @@ const Index = () => {
       </Container>
     </div>
   );
-};
-
-export default Index;
-
+}
 

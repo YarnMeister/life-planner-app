@@ -1,10 +1,10 @@
-import type { VercelRequest, VercelResponse } from '@vercel/node';
+import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { eq, and, gte, or } from 'drizzle-orm';
-import { db, authCodes, users, failedAuthAttempts } from '../../src/lib/auth/db';
-import { signToken, verifyAuthCode } from '../../src/lib/auth/jwt';
+import { db, authCodes, users, failedAuthAttempts } from '@/lib/auth/db.server';
+import { signToken, verifyAuthCode } from '@/lib/auth/jwt';
 import { serialize } from 'cookie';
-import { normalizeEmail } from '../../src/lib/auth/utils';
+import { normalizeEmail } from '@/lib/auth/utils';
 
 const verifySchema = z.object({
   email: z.string().email('Invalid email address'),
@@ -16,20 +16,16 @@ const MAX_VERIFY_ATTEMPTS = 5;
 const VERIFY_LOCKOUT_WINDOW = 15 * 60 * 1000; // 15 minutes
 
 // Helper to get client IP
-function getClientIp(req: VercelRequest): string {
-  const forwarded = req.headers['x-forwarded-for'];
-  const ip = typeof forwarded === 'string' ? forwarded.split(',')[0] : req.socket?.remoteAddress;
+function getClientIp(req: NextRequest): string {
+  const forwarded = req.headers.get('x-forwarded-for');
+  const ip = forwarded ? forwarded.split(',')[0] : req.headers.get('x-real-ip');
   return ip || 'unknown';
 }
 
-export default async function handler(req: VercelRequest, res: VercelResponse) {
-  // Only allow POST requests
-  if (req.method !== 'POST') {
-    return res.status(405).json({ error: 'Method not allowed' });
-  }
-
+export async function POST(req: NextRequest) {
   try {
-    const { email: rawEmail, code } = verifySchema.parse(req.body);
+    const body = await req.json();
+    const { email: rawEmail, code } = verifySchema.parse(body);
     const email = normalizeEmail(rawEmail);
     const clientIp = getClientIp(req);
 
@@ -50,9 +46,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     // Block if too many failed attempts from this email or IP
     if (recentFailedAttempts.length >= MAX_VERIFY_ATTEMPTS) {
-      return res.status(429).json({
-        error: 'Too many failed attempts. Please wait 15 minutes or request a new code.'
-      });
+      return NextResponse.json(
+        { error: 'Too many failed attempts. Please wait 15 minutes or request a new code.' },
+        { status: 429 }
+      );
     }
 
     // Find valid auth codes for this email
@@ -67,10 +64,24 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         )
       );
 
-    if (validCodes.length === 0) {
-      return res.status(400).json({
-        error: 'Invalid or expired authentication code'
+    console.log('🔍 Debug verify-code:');
+    console.log('  Email:', email);
+    console.log('  Code entered:', code);
+    console.log('  Valid codes found:', validCodes.length);
+    if (validCodes.length > 0) {
+      console.log('  First code details:', {
+        email: validCodes[0].email,
+        used: validCodes[0].used,
+        expiresAt: validCodes[0].expiresAt,
+        expired: validCodes[0].expiresAt < new Date()
       });
+    }
+
+    if (validCodes.length === 0) {
+      return NextResponse.json(
+        { error: 'Invalid or expired authentication code' },
+        { status: 400 }
+      );
     }
 
     // Try to verify the code against each valid hash
@@ -89,9 +100,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         ipAddress: clientIp,
       });
 
-      return res.status(400).json({
-        error: 'Invalid or expired authentication code'
-      });
+      return NextResponse.json(
+        { error: 'Invalid or expired authentication code' },
+        { status: 400 }
+      );
     }
 
     // Mark code as used
@@ -108,9 +120,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       .limit(1);
 
     if (user.length === 0) {
-      return res.status(404).json({
-        error: 'User not found'
-      });
+      return NextResponse.json(
+        { error: 'User not found' },
+        { status: 404 }
+      );
     }
 
     // Generate JWT token
@@ -129,9 +142,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       path: '/',
     });
 
-    res.setHeader('Set-Cookie', cookie);
-
-    return res.status(200).json({
+    const response = NextResponse.json({
       success: true,
       user: {
         id: user[0].id,
@@ -140,18 +151,24 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       }
     });
 
+    response.headers.set('Set-Cookie', cookie);
+
+    return response;
+
   } catch (error) {
     console.error('Verify code error:', error);
 
     if (error instanceof z.ZodError) {
-      return res.status(400).json({
-        error: 'Invalid email or code format'
-      });
+      return NextResponse.json(
+        { error: 'Invalid email or code format' },
+        { status: 400 }
+      );
     }
 
-    return res.status(500).json({
-      error: 'Failed to verify authentication code'
-    });
+    return NextResponse.json(
+      { error: 'Failed to verify authentication code' },
+      { status: 500 }
+    );
   }
 }
 

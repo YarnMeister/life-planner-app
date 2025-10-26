@@ -1,12 +1,12 @@
 import { Resend } from 'resend';
+import { serverEnv } from '../env';
 
 // Initialize Resend - will be undefined if API key not set (for development)
-const resend = process.env.RESEND_API_KEY ? new Resend(process.env.RESEND_API_KEY) : null;
+const resend = serverEnv.RESEND_API_KEY ? new Resend(serverEnv.RESEND_API_KEY) : null;
 
-// Configurable email settings with sensible defaults
-const AUTH_EMAIL_FROM = process.env.AUTH_EMAIL_FROM || 'noreply@example.com';
-const AUTH_APP_NAME = process.env.AUTH_APP_NAME || 'App Template';
-const CODE_TTL_MINUTES = parseInt(process.env.AUTH_CODE_TTL_MINUTES || '10');
+// Configurable email settings from validated env
+const AUTH_EMAIL_FROM = serverEnv.FROM_EMAIL;
+const CODE_TTL_MINUTES = parseInt(serverEnv.AUTH_CODE_TTL_MINUTES);
 
 // Validate email format
 if (resend && !AUTH_EMAIL_FROM.includes('@')) {
@@ -21,15 +21,17 @@ export interface SendAuthCodeParams {
 export async function sendAuthCode({ email, code }: SendAuthCodeParams): Promise<void> {
   // Mock mode for development without Resend API key
   if (!resend) {
-    console.log('='.repeat(60));
-    console.log('📧 MOCK EMAIL MODE - No RESEND_API_KEY configured');
-    console.log('='.repeat(60));
-    console.log(`To: ${email}`);
-    console.log(`Code: ${code}`);
-    console.log(`Expires: ${CODE_TTL_MINUTES} minutes`);
-    console.log('='.repeat(60));
-    console.log('💡 To enable real emails, add RESEND_API_KEY to your .env');
-    console.log('='.repeat(60));
+    if (process.env.NODE_ENV !== 'production') {
+      console.log('='.repeat(60));
+      console.log('📧 MOCK EMAIL MODE - No RESEND_API_KEY configured');
+      console.log('='.repeat(60));
+      console.log(`To: ${email}`);
+      console.log(`Code: ${code}`);
+      console.log(`Expires: ${CODE_TTL_MINUTES} minutes`);
+      console.log('='.repeat(60));
+      console.log('💡 To enable real emails, add RESEND_API_KEY to your .env');
+      console.log('='.repeat(60));
+    }
     return;
   }
 
@@ -37,11 +39,11 @@ export async function sendAuthCode({ email, code }: SendAuthCodeParams): Promise
     await resend.emails.send({
       from: AUTH_EMAIL_FROM,
       to: [email],
-      subject: `Your ${AUTH_APP_NAME} login code`,
+      subject: `Your login code`,
       html: `
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
           <div style="text-align: center; margin-bottom: 40px;">
-            <h1 style="color: #1f2937; margin: 0;">${AUTH_APP_NAME}</h1>
+            <h1 style="color: #1f2937; margin: 0;">App Template</h1>
             <p style="color: #6b7280; margin: 10px 0 0 0;">Secure Authentication</p>
           </div>
 
@@ -57,14 +59,16 @@ export async function sendAuthCode({ email, code }: SendAuthCodeParams): Promise
 
           <div style="text-align: center; color: #9ca3af; font-size: 12px;">
             <p>If you didn't request this code, you can safely ignore this email.</p>
-            <p>This email was sent by ${AUTH_APP_NAME} authentication system.</p>
+            <p>This email was sent by the authentication system.</p>
           </div>
         </div>
       `,
-      text: `Your ${AUTH_APP_NAME} login code is: ${code}\n\nThis code will expire in ${CODE_TTL_MINUTES} minutes.\n\nIf you didn't request this code, you can safely ignore this email.`
+      text: `Your login code is: ${code}\n\nThis code will expire in ${CODE_TTL_MINUTES} minutes.\n\nIf you didn't request this code, you can safely ignore this email.`
     });
 
-    console.log(`Auth code sent to ${email}`);
+    if (process.env.NODE_ENV !== 'production') {
+      console.log(`Auth code sent to ${email}`);
+    }
   } catch (error) {
     console.error('Failed to send auth code:', error);
     throw new Error('Failed to send authentication code');

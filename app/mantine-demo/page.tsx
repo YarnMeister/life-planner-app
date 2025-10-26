@@ -1,3 +1,5 @@
+'use client';
+
 import { 
   Container, 
   Title, 
@@ -25,7 +27,7 @@ import {
 } from '@tabler/icons-react';
 import { useState } from 'react';
 
-const MantineDemo = () => {
+export default function MantineDemoPage() {
   const [inputValue, setInputValue] = useState('');
   const { colorScheme, setColorScheme } = useMantineColorScheme();
   const isDark = colorScheme === 'dark';
@@ -65,7 +67,7 @@ const MantineDemo = () => {
             <Alert icon={<IconInfoCircle size={16} />} color="blue" variant="light">
               <Text size="sm">
                 This theme toggle demonstrates how to implement dark mode in your app.
-                The color scheme persists across page reloads thanks to the ColorSchemeScript in index.html.
+                The color scheme persists across page reloads thanks to Mantine&apos;s built-in storage.
               </Text>
             </Alert>
           </Stack>
@@ -213,7 +215,5 @@ const MantineDemo = () => {
       </Stack>
     </Container>
   );
-};
-
-export default MantineDemo;
+}
 
