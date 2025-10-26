@@ -1,15 +1,15 @@
-# New App Template
+# New App Template - Next.js Edition
 
-A production-ready starter template for building modern web applications with React, TypeScript, Drizzle ORM, Neon PostgreSQL, and **passwordless email authentication**.
+A production-ready starter template for building modern web applications with React, Next.js, TypeScript, Drizzle ORM, Neon PostgreSQL, and **passwordless email authentication**.
 
 ## 🚀 Tech Stack
 
-- **Frontend:** React 18 + TypeScript + Vite
+- **Frontend:** React 18 + TypeScript + Next.js 15 (App Router)
 - **UI:** Mantine UI + shadcn/ui + Tailwind CSS + Radix UI
 - **Icons:** Tabler Icons
 - **Database:** PostgreSQL (Neon) + Drizzle ORM
 - **Authentication:** Email OTP (Passwordless) with Resend.com
-- **API:** Vercel Serverless Functions
+- **API:** Next.js Route Handlers
 - **Deployment:** Vercel
 - **Testing:** Vitest + React Testing Library
 - **Package Manager:** npm
@@ -23,8 +23,8 @@ This template includes a **complete email authentication system** with:
 - ✅ Passwordless login with 6-digit codes
 - ✅ Email delivery via [Resend.com](https://resend.com)
 - ✅ Secure JWT tokens with HttpOnly cookies
-- ✅ Route protection for authenticated pages
-- ✅ Mock mode for development (no email API required)
+- ✅ Route protection with Next.js middleware
+- ✅ Server-only database access with `server-only` enforcement
 - ✅ Rate limiting and security best practices
 
 **[📖 View Auth Setup Guide](./docs/email-auth-setup-instructions.md)**
@@ -48,267 +48,426 @@ import { IconCheck } from '@tabler/icons-react';
 
 function MyComponent() {
   return (
-    <Card shadow="sm" padding="lg" radius="md" withBorder>
+    <Card shadow="sm" padding="lg">
       <TextInput label="Email" placeholder="your@email.com" />
-      <Button leftSection={<IconCheck size={16} />}>Submit</Button>
+      <Button leftSection={<IconCheck />}>Submit</Button>
     </Card>
   );
 }
 ```
 
-📚 **Learn More:**
-- Visit `/mantine-demo` to see all components in action
-- Read the [Mantine Setup Guide](./docs/mantine-setup.md) for customization
-- Browse [Mantine Documentation](https://mantine.dev/)
-
-**Hybrid UI System:**
-This template includes both Mantine UI and shadcn/ui, allowing you to use the best components from each library.
+**[📖 View Mantine Setup Guide](./docs/mantine-setup.md)** | **[🎨 See Component Demo](http://localhost:3000/mantine-demo)**
 
 ---
 
-## 📋 Setup Instructions
+## 📦 What's Included
 
-Follow this runsheet to implement the template before building features.
+### Core Features
+- ⚡ **Next.js App Router** - Server components and streaming by default
+- 🔒 **Email Authentication** - Passwordless login with Resend
+- 🗄️ **Database Ready** - Drizzle ORM with Neon PostgreSQL
+- 🎨 **Beautiful UI** - Mantine + shadcn/ui components
+- 🧪 **Testing Setup** - Vitest configured and ready
+- 📝 **TypeScript** - Strict mode enabled
+- 🎯 **ESLint + Prettier** - Code quality tools
+- 🚀 **Vercel Deployment** - One-click deploy
 
-### 1. Create a Working Branch
+### Developer Experience
+- 🔥 Hot reload with Fast Refresh
+- 📁 Clean project structure with App Router
+- 🛡️ Type-safe API routes
+- 🔍 Automatic code splitting
+- 📊 Bundle analyzer included
+- 🌍 Environment variable validation with Zod
+
+---
+
+## 🚀 Quick Start
+
+### 1. Prerequisites
+
+- Node.js 18+ installed
+- npm installed
+- Neon PostgreSQL account (free tier available)
+- Resend.com account (free tier available)
+
+### 2. Clone and Install
 
 ```bash
-git clone https://github.com/YarnMeister/new-app-template.git
+git clone <your-repo-url>
 cd new-app-template
-git checkout -b init-project
+npm install
 ```
 
-> ⚠️ **Important:** Follow your "no direct commits to main" rule
+### 3. Environment Setup
 
-### 2. Install Dependencies and Boot
-
-```bash
-npm ci
-npm run dev
-```
-
-✅ Confirm the placeholder home page renders at `http://localhost:5173`
-
-### 3. Provision Neon Databases
-
-Create **at least two databases**:
-- **TEST** - for CI/local development
-- **PROD** - for Vercel production
-
-📝 Grab connection strings with `sslmode=require`
-
-### 4. Set Local Environment
-
-Create `.env.local` from `env.example`:
-
-```bash
-cp env.example .env.local
-```
-
-Configure the following variables:
+Create a `.env.local` file in the root directory:
 
 ```env
-# Database
-DATABASE_URL=postgresql://user:password@host/dbname?sslmode=require
-PROD_DATABASE_URL=
+# Database (Neon)
+DATABASE_URL="postgresql://..."
 
-# Authentication (Required)
-JWT_SECRET=your-secure-random-string  # Generate with: openssl rand -base64 32
+# JWT Secret (generate with: openssl rand -base64 32)
+JWT_SECRET="your-secret-key-here"
 
-# Email (Optional for development)
-RESEND_API_KEY=re_xxxxxxxxxx  # Get from https://resend.com
-# If not set, auth codes will be logged to console
+# Resend Email API
+RESEND_API_KEY="re_..."
+FROM_EMAIL="noreply@yourdomain.com"
 
-# Optional: Skip RLS tests for first pipeline run
-# SKIP_RLS_TESTS=1
+# Optional: Auth Configuration
+AUTH_RATE_LIMIT_WINDOW_MS=300000  # 5 minutes
+AUTH_RATE_LIMIT_MAX=3              # 3 attempts per window
+AUTH_CODE_TTL_MINUTES=10           # Code expires in 10 minutes
 ```
 
-> 💡 **Development Tip:** You can develop without `RESEND_API_KEY` - authentication codes will print to the console!
-
-### 5. Set GitHub Actions Secrets (TEST)
-
-In your repo: **Settings → Secrets and variables → Actions → Repository secrets**
-
-Add:
-- `DATABASE_URL` = Neon TEST connection string
-- (Optional) `SKIP_RLS_TESTS=1` for first run (remove after first successful deploy)
-
-### 6. Set Vercel Environment (PROD)
-
-1. Create a new Vercel project linked to your repository
-2. Go to **Project Settings → Environment Variables**
-3. Add (all with Production scope):
-   - `DATABASE_URL` or `PROD_DATABASE_URL` = Neon PROD connection string
-   - `JWT_SECRET` = Your secure JWT secret (use same as local or generate new)
-   - `RESEND_API_KEY` = Your Resend.com API key (required for production)
-   - `NODE_ENV=production`
-4. Ensure Node and build defaults are fine for Vite (they usually are)
-
-### 7. Initialize Drizzle for Your Domain
-
-Edit `drizzle/schema.ts` and replace the `app_example` placeholder with your real tables:
+### 4. Database Setup
 
 ```bash
-# Generate migrations
+# Generate migration from schema
 npm run db:generate
 
-# Review SQL in drizzle/migrations/
-
-# Apply locally to TEST
+# Apply migrations to your database
 npm run db:migrate
+
+# Verify migration was successful
+npm run db:verify-migration
 ```
 
-> 💾 The `db:migrate` command uses `DATABASE_URL` from `.env.local`
-
-**Commit your changes:**
-```bash
-git add drizzle/
-git commit -m "Add initial schema and migrations"
-```
-
-### 8. RLS and Safety Audits
-
-When you add protected tables, author RLS migrations as SQL files (enable + policies), then run:
+### 5. Run Development Server
 
 ```bash
-npm run db:lint:migrations
-npm run db:test-rls        # if/when you add RLS harness
-npm run db:audit-rls
-npm run db:audit-raw-sql
-```
-
-> 🛡️ If first deploy is blocked by RLS checks, set `SKIP_RLS_TESTS=1` once, deploy, then remove
-
-### 9. Update Documentation
-
-- Update this README with your app name, dev scripts, and environment setup
-- If you keep `docs/`, prune or retitle content to match your app's purpose
-- Update `package.json` name and description
-
-### 10. Optional: CI Workflow
-
-If you don't yet have `.github/workflows/` pipeline, add one to:
-1. Install dependencies
-2. Lint migrations
-3. Apply to TEST DB (using `DATABASE_URL` secret)
-4. Run audits/tests
-
-Keep it green before merging to main (this gates Vercel deploys)
-
-### 11. Verify from Scratch
-
-Remove DB and re-apply migrations locally to validate the full path:
-
-```bash
-npm run db:status
-npm run db:migrate
 npm run dev
 ```
 
-🧪 Smoke test the application
-
-### 12. Merge and Deploy
-
-```bash
-# Open PR from init-project → main
-git push origin init-project
-```
-
-When ready, per your rule, say **"deploy to prod"** to merge the branch into main and trigger Vercel deployment.
-
-### 13. Start Feature Work
-
-```bash
-git checkout main
-git pull origin main
-git checkout -b feature/your-feature-name
-```
-
-**Development loop:**
-1. Update `drizzle/schema.ts`
-2. Run `npm run db:generate`
-3. Review SQL in `drizzle/migrations/`
-4. Run `npm run db:migrate`
-5. Commit schema + SQL migrations + journal
+Visit [http://localhost:3000](http://localhost:3000)
 
 ---
 
-## 🛠️ Available Scripts
-
-| Command | Description |
-|---------|-------------|
-| `npm run dev` | Start development server |
-| `npm run build` | Build for production |
-| `npm run preview` | Preview production build |
-| `npm run lint` | Run ESLint |
-| `npm test` | Run tests |
-| `npm run test:watch` | Run tests in watch mode |
-| `npm run db:generate` | Generate Drizzle migrations |
-| `npm run db:migrate` | Apply migrations |
-| `npm run db:status` | Check migration status |
-| `npm run db:lint:migrations` | Lint migration files |
-| `npm run db:test-rls` | Test Row Level Security |
-| `npm run db:audit-rls` | Audit RLS policies |
-| `npm run db:audit-raw-sql` | Audit raw SQL usage |
-
----
-
-## 🗂️ Project Structure
+## 📁 Project Structure
 
 ```
-├── api/                  # Vercel serverless functions
-│   └── auth/             # Authentication endpoints
-├── drizzle/              # Database schema and migrations
-│   ├── schema.ts         # Drizzle schema definitions (includes auth tables)
-│   └── migrations/       # Generated SQL migrations
-├── scripts/              # Database utility scripts
+new-app-template/
+├── app/                      # Next.js App Router
+│   ├── api/                 # API Route Handlers
+│   │   └── auth/           # Authentication endpoints
+│   ├── components/         # UI components (shadcn/ui)
+│   ├── login/              # Login page
+│   ├── verify/             # OTP verification page
+│   ├── mantine-demo/       # Mantine component showcase
+│   ├── layout.tsx          # Root layout with providers
+│   ├── page.tsx            # Home page
+│   ├── not-found.tsx       # 404 page
+│   └── globals.css         # Global styles
 ├── src/
 │   ├── components/
-│   │   ├── auth/         # Authentication components
-│   │   └── ui/           # shadcn/ui components
-│   ├── contexts/         # React contexts (AuthContext)
-│   ├── hooks/            # Custom React hooks
+│   │   └── providers/      # Client-side providers
+│   ├── contexts/           # React contexts
+│   ├── hooks/              # Custom hooks
 │   ├── lib/
-│   │   ├── auth/         # Auth utilities (email, JWT, db)
-│   │   └── utils.ts      # Utility functions
-│   ├── pages/
-│   │   ├── auth/         # Login & verify pages
-│   │   └── ...           # Other pages
-│   ├── theme/            # Mantine theme configuration
-│   └── tests/            # Test files
-├── public/               # Static assets
-└── docs/                 # Documentation
-    └── email-auth-setup-instructions.md     # Authentication setup guide
+│   │   ├── auth/           # Auth utilities
+│   │   │   ├── db.server.ts    # Server-only DB module
+│   │   │   ├── email.ts        # Email sending
+│   │   │   ├── jwt.ts          # JWT utilities
+│   │   │   └── utils.ts        # Helper functions
+│   │   ├── env.ts          # Environment validation
+│   │   └── utils.ts        # General utilities
+│   ├── tests/              # Test setup and utilities
+│   └── theme/              # Mantine theme config
+├── drizzle/
+│   ├── migrations/         # Database migrations
+│   └── schema.ts           # Database schema
+├── scripts/                # Database utility scripts
+├── public/                 # Static files
+├── docs/                   # Documentation
+├── next.config.ts          # Next.js configuration
+├── drizzle.config.ts       # Drizzle ORM configuration
+├── tailwind.config.ts      # Tailwind CSS configuration
+├── vitest.config.ts        # Vitest configuration
+├── middleware.ts           # Next.js middleware (auth)
+└── package.json
 ```
 
 ---
 
-## 🔒 Security & Best Practices
+## 🗄️ Database Management
 
-- ✅ **Passwordless authentication** with email OTP codes
-- ✅ **JWT tokens** with HttpOnly cookies
-- ✅ **Rate limiting** to prevent abuse
-- ✅ **Row Level Security (RLS)** audits built-in
-- ✅ **Migration linting** before apply
-- ✅ Separate TEST and PROD databases
-- ✅ No direct commits to main (branch-based workflow)
+### Common Commands
+
+```bash
+# Generate a new migration after schema changes
+npm run db:generate
+
+# Apply pending migrations
+npm run db:migrate
+
+# Check migration status
+npm run db:status
+
+# Verify migration integrity
+npm run db:verify-migration
+
+# Test database connection
+npm run db:test-connection
+```
+
+### Schema Updates
+
+1. Edit `drizzle/schema.ts`
+2. Run `npm run db:generate` to create migration
+3. Review the migration in `drizzle/migrations/`
+4. Run `npm run db:migrate` to apply changes
+
+**[📖 Read Full Migration Guide](./docs/migrations.md)**
+
+---
+
+## 🔑 Authentication Flow
+
+### How It Works
+
+1. **Request Code:** User enters email → 6-digit code sent via Resend
+2. **Verify Code:** User enters code → JWT token created → Cookie set
+3. **Protected Routes:** Middleware checks cookie → Redirects if missing
+4. **API Protection:** Route handlers verify JWT from cookie
+
+### Implementation
+
+**Login Page** (`app/login/page.tsx`)
+```tsx
+'use client';
+import { useAuth } from '@/contexts/AuthContext';
+
+function LoginPage() {
+  const { requestCode } = useAuth();
+  // ... request authentication code
+}
+```
+
+**Verify Page** (`app/verify/page.tsx`)
+```tsx
+'use client';
+import { useAuth } from '@/contexts/AuthContext';
+
+function VerifyPage() {
+  const { login } = useAuth();
+  // ... verify code and login
+}
+```
+
+**Protected Page** (`app/page.tsx`)
+```tsx
+'use client';
+import { useAuth } from '@/contexts/AuthContext';
+
+function HomePage() {
+  const { user, logout } = useAuth();
+  // Middleware redirects if not authenticated
+  return <div>Welcome {user?.email}</div>;
+}
+```
+
+**Middleware** (`middleware.ts`)
+```typescript
+export function middleware(request: NextRequest) {
+  const token = request.cookies.get('auth-token')?.value;
+  // Redirect logic based on token presence
+}
+```
+
+---
+
+## 🎨 Styling & Theming
+
+### Mantine Theme
+
+Edit `src/theme/mantine-theme.ts` to customize:
+
+```typescript
+export const theme = createTheme({
+  primaryColor: 'blue',
+  colors: {
+    blue: ['#eff6ff', '#dbeafe', ...], // Your brand colors
+  },
+  // ... more theme options
+});
+```
+
+### Tailwind CSS
+
+Edit `tailwind.config.ts` for utility classes. Both Mantine and Tailwind work together seamlessly.
+
+---
+
+## 🧪 Testing
+
+```bash
+# Run all tests
+npm test
+
+# Run tests in watch mode
+npm run test:watch
+
+# Run tests with UI
+npm run test:ui
+
+# Generate coverage report
+npm run test:coverage
+```
+
+Tests are located alongside source files with `.test.ts` or `.test.tsx` extensions.
+
+---
+
+## 🚀 Deployment
+
+### Vercel (Recommended)
+
+1. Push your code to GitHub
+2. Import project in Vercel
+3. Add environment variables in Vercel dashboard:
+   - `DATABASE_URL`
+   - `JWT_SECRET`
+   - `RESEND_API_KEY`
+   - `FROM_EMAIL`
+4. Deploy!
+
+Vercel will automatically:
+- Run migrations on preview deployments
+- Build and deploy your Next.js app
+- Set up custom domains
+
+### Environment Variables in Vercel
+
+**Production:**
+- Set all required env vars in "Environment Variables" section
+- Make sure `NODE_ENV` is set to `production`
+
+**Preview Deployments:**
+- Migrations run automatically via `prebuild` script
+- Use a separate database for preview if needed
+
+---
+
+## 📚 Documentation
+
+- [Email Authentication Setup](./docs/email-auth-setup-instructions.md) - Complete auth guide
+- [Mantine UI Setup](./docs/mantine-setup.md) - UI customization guide
+- [Database Migrations](./docs/migrations.md) - Schema management guide
+- [Test Playbook](./docs/test-playbook.md) - Testing guidelines
+
+---
+
+## 🛠️ Scripts Reference
+
+### Development
+- `npm run dev` - Start Next.js dev server
+- `npm run build` - Build for production
+- `npm start` - Start production server
+- `npm run lint` - Run ESLint
+- `npm run analyze` - Analyze bundle size
+
+### Database
+- `npm run db:generate` - Generate migration
+- `npm run db:migrate` - Apply migrations
+- `npm run db:status` - Check status
+- `npm run db:lint:migrations` - Lint migrations
+- `npm run db:test-connection` - Test connection
+- `npm run db:verify-migration` - Verify integrity
+
+### Testing
+- `npm test` - Run tests once
+- `npm run test:watch` - Watch mode
+- `npm run test:ui` - UI mode
+- `npm run test:coverage` - Coverage report
+
+---
+
+## 🔒 Security Features
+
+- ✅ HttpOnly cookies for JWT storage
+- ✅ CSRF protection with SameSite cookies
+- ✅ Rate limiting on auth endpoints
+- ✅ Failed attempt tracking and lockout
+- ✅ Code hashing (never store plaintext)
+- ✅ JWT token expiration
 - ✅ Environment variable validation
+- ✅ Server-only database access
+- ✅ SQL injection prevention (Drizzle ORM)
 
 ---
 
-## 📚 Additional Resources
+## 📝 Common Tasks
 
-- [Auth Setup Guide](./docs/email-auth-setup-instructions.md) - Complete authentication documentation
-- [Resend Docs](https://resend.com/docs) - Email delivery service
-- [Mantine UI Docs](https://mantine.dev/) - UI component library
-- [Tabler Icons](https://tabler.io/icons) - Icon library
-- [Drizzle ORM Docs](https://orm.drizzle.team/) - Database ORM
-- [Neon Docs](https://neon.tech/docs) - PostgreSQL hosting
-- [Vercel Docs](https://vercel.com/docs) - Deployment platform
-- [shadcn/ui](https://ui.shadcn.com/) - Additional UI components
+### Add a New Page
+
+1. Create `app/your-page/page.tsx`
+```tsx
+'use client';
+
+export default function YourPage() {
+  return <div>Your content</div>;
+}
+```
+
+2. Page is automatically routed to `/your-page`
+
+### Add a New API Endpoint
+
+1. Create `app/api/your-endpoint/route.ts`
+```typescript
+import { NextRequest, NextResponse } from 'next/server';
+
+export async function GET(req: NextRequest) {
+  return NextResponse.json({ message: 'Hello' });
+}
+```
+
+### Add Database Table
+
+1. Edit `drizzle/schema.ts`
+```typescript
+export const yourTable = pgTable('your_table', {
+  id: text('id').primaryKey(),
+  name: text('name').notNull(),
+  createdAt: timestamp('created_at').defaultNow(),
+});
+```
+
+2. Generate and apply migration
+```bash
+npm run db:generate
+npm run db:migrate
+```
 
 ---
 
-## 📝 License
+## 🤝 Contributing
 
-MIT
+Contributions are welcome! Please feel free to submit a Pull Request.
+
+---
+
+## 📄 License
+
+This project is licensed under the MIT License.
+
+---
+
+## 🙋‍♂️ Support
+
+For issues, questions, or suggestions:
+- Open an issue on GitHub
+- Check the documentation in `/docs`
+- Review the Mantine demo at `/mantine-demo`
+
+---
+
+## 🎯 Next Steps
+
+1. ✅ Set up your database and environment variables
+2. ✅ Customize the Mantine theme colors
+3. ✅ Add your own pages and components
+4. ✅ Configure your domain for email sending
+5. ✅ Deploy to Vercel
+
+**Happy coding! 🚀**

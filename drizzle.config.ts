@@ -20,6 +20,8 @@ if (!url) {
   );
 }
 
+// Next.js compatible Drizzle configuration
+// Works with both Next.js server runtime and standalone scripts
 export default {
   schema: './drizzle/schema.ts',
   out: './drizzle/migrations',

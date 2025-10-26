@@ -1,3 +1,5 @@
+'use client';
+
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 
 export interface User {
@@ -118,4 +120,3 @@ export function useAuth() {
   }
   return context;
 }
-
