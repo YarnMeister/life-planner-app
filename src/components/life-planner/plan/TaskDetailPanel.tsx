@@ -61,11 +61,12 @@ export function TaskDetailPanel() {
 
   const selectedTask = tasks.find((t) => t.id === selectedTaskId);
   const isOpen = selectedTaskId !== null;
-  const isEditing = selectedTask !== undefined;
+  const isEditing = selectedTask !== undefined && selectedTaskId !== 'new';
 
   // Update form when task is selected
   useEffect(() => {
-    if (selectedTask) {
+    if (selectedTask && selectedTaskId !== 'new') {
+      // Editing existing task
       setFormData({
         title: selectedTask.title,
         description: selectedTask.description || '',
@@ -81,7 +82,7 @@ export function TaskDetailPanel() {
         recurrenceInterval: selectedTask.recurrenceInterval,
       });
       setDueDate(selectedTask.dueDate ? new Date(selectedTask.dueDate) : null);
-    } else if (isOpen) {
+    } else if (selectedTaskId === 'new') {
       // New task - use selected pillar and theme
       setFormData({
         title: '',
@@ -99,20 +100,29 @@ export function TaskDetailPanel() {
       });
       setDueDate(null);
     }
-  }, [selectedTask, isOpen, selectedPillarId, selectedThemeIds]);
+  }, [selectedTask, selectedTaskId, selectedPillarId, selectedThemeIds]);
 
   const handleClose = () => {
     selectTask(null);
   };
 
   const handleSubmit = async () => {
-    if (!formData.title || !formData.pillarId || !formData.themeId) return;
+    if (!formData.title || !formData.pillarId || !formData.themeId) {
+      console.error('Missing required fields:', {
+        title: formData.title,
+        pillarId: formData.pillarId,
+        themeId: formData.themeId
+      });
+      return;
+    }
 
     const taskData = {
       ...formData,
       dueDate: dueDate ? dueDate.toISOString().split('T')[0] : undefined,
       rank: selectedTask?.rank || 0,
     };
+
+    console.log('Submitting task data:', taskData);
 
     try {
       if (isEditing && selectedTask) {
@@ -123,6 +133,7 @@ export function TaskDetailPanel() {
       handleClose();
     } catch (error) {
       console.error('Failed to save task:', error);
+      alert(`Failed to save task: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   };
 

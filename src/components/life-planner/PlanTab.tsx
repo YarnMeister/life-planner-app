@@ -29,7 +29,8 @@ export function PlanTab() {
       ]);
     };
     loadData();
-  }, [loadPillars, loadThemes, loadTasks]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // Only run once on mount
 
   // Show loading state
   if (isLoading) {

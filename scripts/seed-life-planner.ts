@@ -198,23 +198,38 @@ const seedTasksData = [
 async function seed() {
   try {
     console.log('🌱 Starting Life Planner seed...');
-    
+
+    // Get email from command line args or use default
+    const userEmail = process.argv[2] || 'seed@lifeplanner.local';
+    console.log(`📧 Target user email: ${userEmail}`);
+
     // Get or create test user
     let testUser = await db.query.users.findFirst({
-      where: eq(users.email, 'seed@lifeplanner.local'),
+      where: eq(users.email, userEmail),
     });
-    
+
     if (!testUser) {
-      console.log('📝 Creating test user...');
+      console.log(`📝 Creating user: ${userEmail}...`);
       const result = await db.insert(users).values({
-        email: 'seed@lifeplanner.local',
+        email: userEmail,
       }).returning();
       testUser = result[0];
     }
-    
+
     const userId = testUser.id;
-    console.log(`✅ Using user: ${userId}`);
-    
+    console.log(`✅ Using user: ${userId} (${userEmail})`);
+
+    // Check for existing data
+    const existingPillars = await db.query.pillars.findMany({ where: eq(pillars.userId, userId) });
+    if (existingPillars.length > 0) {
+      console.log(`⚠️  User already has ${existingPillars.length} pillars. Deleting existing data...`);
+      // Delete existing data (cascade will handle themes and tasks)
+      await db.delete(tasks).where(eq(tasks.userId, userId));
+      await db.delete(themes).where(eq(themes.userId, userId));
+      await db.delete(pillars).where(eq(pillars.userId, userId));
+      console.log('✅ Existing data deleted');
+    }
+
     // Insert pillars
     console.log('📌 Inserting pillars...');
     const insertedPillars = await db.insert(pillars).values(

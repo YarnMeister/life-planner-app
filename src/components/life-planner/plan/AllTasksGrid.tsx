@@ -2,8 +2,7 @@
 
 import { useState, useMemo } from 'react';
 import {
-  SimpleGrid,
-  Card,
+  Table,
   Text,
   Group,
   Badge,
@@ -12,6 +11,7 @@ import {
   Checkbox,
   TextInput,
   Select,
+  ScrollArea,
 } from '@mantine/core';
 import { IconEdit, IconTrash, IconSearch } from '@tabler/icons-react';
 import { useLifeOS } from '@/hooks/useLifeOS';
@@ -113,40 +113,132 @@ export function AllTasksGrid() {
         />
       </Group>
 
-      {/* Tasks grid */}
-      <div style={{ flex: 1, overflow: 'auto' }}>
+      {/* Tasks count */}
+      <Text size="sm" c="dimmed">
+        {filteredTasks.length} task{filteredTasks.length !== 1 ? 's' : ''}
+      </Text>
+
+      {/* Tasks table */}
+      <ScrollArea style={{ flex: 1 }}>
         {filteredTasks.length === 0 ? (
           <Text c="dimmed" size="sm" ta="center" mt="xl">
             No tasks found
           </Text>
         ) : (
-          <SimpleGrid
-            cols={{ base: 1, sm: 2, md: 3, lg: 4 }}
-            spacing="md"
-          >
-            {filteredTasks.map((task) => {
-              const pillar = pillars.find((p) => p.id === task.pillarId);
-              const theme = themes.find((t) => t.id === task.themeId);
+          <Table striped highlightOnHover withTableBorder withColumnBorders>
+            <Table.Thead>
+              <Table.Tr>
+                <Table.Th style={{ width: 40 }}>Done</Table.Th>
+                <Table.Th style={{ width: 300 }}>Task</Table.Th>
+                <Table.Th style={{ width: 150 }}>Pillar</Table.Th>
+                <Table.Th style={{ width: 150 }}>Theme</Table.Th>
+                <Table.Th style={{ width: 80 }}>Impact</Table.Th>
+                <Table.Th style={{ width: 80 }}>Time</Table.Th>
+                <Table.Th style={{ width: 100 }}>Status</Table.Th>
+                <Table.Th style={{ width: 120 }}>Due Date</Table.Th>
+                <Table.Th style={{ width: 300 }}>Description</Table.Th>
+                <Table.Th style={{ width: 100 }}>Actions</Table.Th>
+              </Table.Tr>
+            </Table.Thead>
+            <Table.Tbody>
+              {filteredTasks.map((task) => {
+                const pillar = pillars.find((p) => p.id === task.pillarId);
+                const theme = themes.find((t) => t.id === task.themeId);
 
-              return (
-                <Card
-                  key={task.id}
-                  padding="md"
-                  withBorder
-                  style={{
-                    borderLeft: pillar ? `4px solid ${pillar.color}` : undefined,
-                    height: '100%',
-                    display: 'flex',
-                    flexDirection: 'column',
-                  }}
-                >
-                  <Stack gap="sm" style={{ flex: 1 }}>
-                    {/* Header with checkbox and actions */}
-                    <Group justify="space-between" wrap="nowrap">
+                return (
+                  <Table.Tr
+                    key={task.id}
+                    style={{
+                      opacity: task.status === 'done' ? 0.6 : 1,
+                      borderLeft: pillar ? `4px solid ${pillar.color}` : undefined,
+                    }}
+                  >
+                    {/* Checkbox */}
+                    <Table.Td>
                       <Checkbox
                         checked={task.status === 'done'}
                         onChange={() => handleTaskComplete(task.id, task.status)}
                       />
+                    </Table.Td>
+
+                    {/* Task title */}
+                    <Table.Td>
+                      <Text
+                        size="sm"
+                        fw={500}
+                        style={{ cursor: 'pointer' }}
+                        onClick={() => selectTask(task.id)}
+                        td={task.status === 'done' ? 'line-through' : undefined}
+                      >
+                        {task.title}
+                      </Text>
+                    </Table.Td>
+
+                    {/* Pillar */}
+                    <Table.Td>
+                      {pillar && (
+                        <Badge size="sm" variant="light" color={pillar.color}>
+                          {pillar.name}
+                        </Badge>
+                      )}
+                    </Table.Td>
+
+                    {/* Theme */}
+                    <Table.Td>
+                      {theme && (
+                        <Text size="sm">{theme.name}</Text>
+                      )}
+                    </Table.Td>
+
+                    {/* Impact */}
+                    <Table.Td>
+                      {task.impact && (
+                        <Badge size="sm" color={impactColors[task.impact]}>
+                          {task.impact}
+                        </Badge>
+                      )}
+                    </Table.Td>
+
+                    {/* Time estimate */}
+                    <Table.Td>
+                      {task.timeEstimate && (
+                        <Badge size="sm" variant="light">
+                          {task.timeEstimate}
+                        </Badge>
+                      )}
+                    </Table.Td>
+
+                    {/* Status */}
+                    <Table.Td>
+                      <Badge
+                        size="sm"
+                        color={task.status === 'done' ? 'green' : 'blue'}
+                        variant="light"
+                      >
+                        {task.status}
+                      </Badge>
+                    </Table.Td>
+
+                    {/* Due date */}
+                    <Table.Td>
+                      {task.dueDate && (
+                        <Text size="sm">
+                          {new Date(task.dueDate).toLocaleDateString()}
+                        </Text>
+                      )}
+                    </Table.Td>
+
+                    {/* Description */}
+                    <Table.Td>
+                      {task.description && (
+                        <Text size="xs" c="dimmed" lineClamp={2}>
+                          {task.description}
+                        </Text>
+                      )}
+                    </Table.Td>
+
+                    {/* Actions */}
+                    <Table.Td>
                       <Group gap={4} wrap="nowrap">
                         <ActionIcon
                           variant="subtle"
@@ -164,66 +256,14 @@ export function AllTasksGrid() {
                           <IconTrash size={16} />
                         </ActionIcon>
                       </Group>
-                    </Group>
-
-                    {/* Task title */}
-                    <Text
-                      fw={500}
-                      size="sm"
-                      style={{ cursor: 'pointer' }}
-                      onClick={() => selectTask(task.id)}
-                      td={task.status === 'done' ? 'line-through' : undefined}
-                      c={task.status === 'done' ? 'dimmed' : undefined}
-                    >
-                      {task.title}
-                    </Text>
-
-                    {/* Task description */}
-                    {task.description && (
-                      <Text size="xs" c="dimmed" lineClamp={2}>
-                        {task.description}
-                      </Text>
-                    )}
-
-                    {/* Pillar and Theme */}
-                    <Group gap="xs">
-                      {pillar && (
-                        <Badge size="xs" variant="light" color={pillar.color}>
-                          {pillar.name}
-                        </Badge>
-                      )}
-                      {theme && (
-                        <Badge size="xs" variant="outline">
-                          {theme.name}
-                        </Badge>
-                      )}
-                    </Group>
-
-                    {/* Task metadata */}
-                    <Group gap="xs" mt="auto">
-                      {task.impact && (
-                        <Badge size="xs" color={impactColors[task.impact]}>
-                          {task.impact}
-                        </Badge>
-                      )}
-                      {task.timeEstimate && (
-                        <Badge size="xs" variant="light">
-                          {task.timeEstimate}
-                        </Badge>
-                      )}
-                      {task.dueDate && (
-                        <Badge size="xs" variant="light" color="orange">
-                          {new Date(task.dueDate).toLocaleDateString()}
-                        </Badge>
-                      )}
-                    </Group>
-                  </Stack>
-                </Card>
-              );
-            })}
-          </SimpleGrid>
+                    </Table.Td>
+                  </Table.Tr>
+                );
+              })}
+            </Table.Tbody>
+          </Table>
         )}
-      </div>
+      </ScrollArea>
     </Stack>
   );
 }

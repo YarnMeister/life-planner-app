@@ -232,7 +232,7 @@ export function TasksTable() {
         <Button
           leftSection={<IconPlus size={16} />}
           size="xs"
-          onClick={() => selectTask(null)}
+          onClick={() => selectTask('new')}
         >
           Add Task
         </Button>
