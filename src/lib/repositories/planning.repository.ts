@@ -125,7 +125,6 @@ export class PlanningRepository {
           eq(planningDoc.userId, userId),
           eq(planningDoc.kind, kind)
         ),
-        // @ts-expect-error - Drizzle typing issue with 'for'
         for: 'update',
       });
 
@@ -189,7 +188,6 @@ export class PlanningRepository {
           eq(planningDoc.userId, userId),
           eq(planningDoc.kind, kind)
         ),
-        // @ts-expect-error - Drizzle typing issue with 'for'
         for: 'update',
       });
 

@@ -118,7 +118,9 @@ export function TaskDetailPanel() {
 
     const taskData = {
       ...formData,
-      dueDate: dueDate ? dueDate.toISOString().split('T')[0] : undefined,
+      dueDate: dueDate
+        ? (dueDate instanceof Date ? dueDate.toISOString().split('T')[0] : dueDate)
+        : undefined,
       rank: selectedTask?.rank || 0,
     };
 
