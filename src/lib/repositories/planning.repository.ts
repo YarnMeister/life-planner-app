@@ -1,6 +1,6 @@
 import { eq, and } from 'drizzle-orm';
 import { db } from '@/lib/auth/db.server';
-import { planningDoc } from '@/drizzle/schema';
+import { planningDoc } from '../../../drizzle/schema';
 import { 
   PlanningDocKind, 
   PillarsDoc, 
