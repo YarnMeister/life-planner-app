@@ -25,6 +25,19 @@ export interface UpdateThemeInput {
 
 export class ThemesServiceV2 {
   /**
+   * Remove undefined values from an object (JSON Patch doesn't allow undefined)
+   */
+  private removeUndefined<T extends Record<string, any>>(obj: T): T {
+    const result = {} as T;
+    for (const key in obj) {
+      if (obj[key] !== undefined) {
+        result[key] = obj[key];
+      }
+    }
+    return result;
+  }
+
+  /**
    * Get all themes for a user
    */
   async getThemes(userId: string): Promise<Theme[]> {
@@ -65,7 +78,7 @@ export class ThemesServiceV2 {
     }
 
     const now = new Date().toISOString();
-    const newTheme: Theme = {
+    const newTheme: Theme = this.removeUndefined({
       id: uuidv4(),
       pillarId: input.pillarId,
       name: input.name.trim(),
@@ -74,7 +87,7 @@ export class ThemesServiceV2 {
       order: doc.data.length,
       createdAt: now,
       updatedAt: now,
-    };
+    } as Theme);
 
     // Use JSON Patch to add
     const patch = createAddItemPatch(newTheme);

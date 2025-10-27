@@ -104,6 +104,19 @@ export class TasksServiceV2 {
   }
 
   /**
+   * Remove undefined values from an object (JSON Patch doesn't allow undefined)
+   */
+  private removeUndefined<T extends Record<string, any>>(obj: T): T {
+    const result = {} as T;
+    for (const key in obj) {
+      if (obj[key] !== undefined) {
+        result[key] = obj[key];
+      }
+    }
+    return result;
+  }
+
+  /**
    * Create a new task
    */
   async createTask(input: CreateTaskInput, userId: string): Promise<Task> {
@@ -116,7 +129,7 @@ export class TasksServiceV2 {
     }
 
     const now = new Date().toISOString();
-    const newTask: Task = {
+    const newTask: Task = this.removeUndefined({
       id: uuidv4(),
       themeId: input.themeId,
       pillarId: theme.pillarId, // Denormalize for fast filtering
@@ -140,7 +153,7 @@ export class TasksServiceV2 {
       recurrenceInterval: input.recurrenceInterval,
       createdAt: now,
       updatedAt: now,
-    };
+    } as Task);
 
     // Use JSON Patch to add
     const patch = createAddItemPatch(newTask);
