@@ -118,14 +118,14 @@ export class PlanningRepository {
     // Validate data
     this.validateDoc(kind, data);
 
-    return db.transaction(async (tx) => {
+    return db.transaction(async (tx: any) => {
       // Lock and fetch current version
       const current = await tx.query.planningDoc.findFirst({
         where: and(
           eq(planningDoc.userId, userId),
           eq(planningDoc.kind, kind)
         ),
-        // @ts-ignore - Drizzle typing issue with 'for'
+        // @ts-expect-error - Drizzle typing issue with 'for'
         for: 'update',
       });
 
@@ -182,14 +182,14 @@ export class PlanningRepository {
       throw new ValidationError('Invalid JSON Patch', validationResult.error);
     }
 
-    return db.transaction(async (tx) => {
+    return db.transaction(async (tx: any) => {
       // Lock and fetch current version
       const current = await tx.query.planningDoc.findFirst({
         where: and(
           eq(planningDoc.userId, userId),
           eq(planningDoc.kind, kind)
         ),
-        // @ts-ignore
+        // @ts-expect-error - Drizzle typing issue with 'for'
         for: 'update',
       });
 

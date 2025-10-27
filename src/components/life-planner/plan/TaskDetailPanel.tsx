@@ -24,7 +24,7 @@ interface TaskFormData {
   status: 'todo' | 'doing' | 'done' | 'blocked' | 'archived';
   dueDate?: string;
   notes: string;
-  taskType?: 'adhoc' | 'recurring';
+  taskType: 'adhoc' | 'recurring';
   recurrenceFrequency?: 'daily' | 'weekly' | 'monthly';
   recurrenceInterval?: number;
 }
@@ -70,7 +70,7 @@ export function TaskDetailPanel() {
       setFormData({
         title: selectedTask.title,
         description: selectedTask.description || '',
-        pillarId: selectedTask.pillarId,
+        pillarId: selectedTask.pillarId || '',
         themeId: selectedTask.themeId,
         timeEstimate: selectedTask.timeEstimate,
         impact: selectedTask.impact,
@@ -226,10 +226,13 @@ export function TaskDetailPanel() {
         <Select
           label="Status"
           value={formData.status}
-          onChange={(value) => setFormData({ ...formData, status: value as 'open' | 'done' })}
+          onChange={(value) => setFormData({ ...formData, status: value as 'todo' | 'doing' | 'done' | 'blocked' | 'archived' })}
           data={[
-            { value: 'open', label: 'Open' },
+            { value: 'todo', label: 'To Do' },
+            { value: 'doing', label: 'Doing' },
             { value: 'done', label: 'Done' },
+            { value: 'blocked', label: 'Blocked' },
+            { value: 'archived', label: 'Archived' },
           ]}
         />
 

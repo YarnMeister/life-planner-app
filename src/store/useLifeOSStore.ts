@@ -47,7 +47,7 @@ interface LifeOSState {
   recalculatePillarRating: (pillarId: string) => void;
 
   // Error handling
-  clearError: () => set({ error: null }),
+  clearError: () => void;
 }
 
 const generateId = () => Math.random().toString(36).substr(2, 9);

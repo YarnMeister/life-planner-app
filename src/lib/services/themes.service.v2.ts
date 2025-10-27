@@ -1,5 +1,5 @@
 import { planningRepository } from '@/lib/repositories/planning.repository';
-import { Theme, ThemesDoc, PillarsDoc, TasksDoc } from '@/types/planning.types';
+import { Theme, ThemesDoc, TasksDoc } from '@/types/planning.types';
 import { 
   findItemIndex, 
   createAddItemPatch, 

@@ -44,7 +44,7 @@ export const pillarsAPI = {
     return handleResponse(response);
   },
 
-  async create(data: Omit<Pillar, 'id' | 'rating' | 'createdAt' | 'updatedAt'>): Promise<Pillar> {
+  async create(data: Pick<Pillar, 'name' | 'color' | 'domain'>): Promise<Pillar> {
     const response = await fetch(`${API_BASE}/pillars`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -84,7 +84,7 @@ export const themesAPI = {
     return handleResponse(response);
   },
 
-  async create(data: Omit<Theme, 'id' | 'rating' | 'createdAt' | 'updatedAt'>): Promise<Theme> {
+  async create(data: Pick<Theme, 'pillarId' | 'name'>): Promise<Theme> {
     const response = await fetch(`${API_BASE}/themes`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
