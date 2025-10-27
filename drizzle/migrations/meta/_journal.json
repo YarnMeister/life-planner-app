@@ -29,13 +29,6 @@
       "when": 1730000100000,
       "tag": "0003_seed_default_pillars_themes",
       "breakpoints": true
-    },
-    {
-      "idx": 4,
-      "version": "7",
-      "when": 1730000200000,
-      "tag": "0004_reseed_existing_users",
-      "breakpoints": true
     }
   ]
 }
