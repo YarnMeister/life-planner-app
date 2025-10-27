@@ -26,8 +26,13 @@
     "db:audit-raw-sql": "node scripts/audit-raw-sql.mjs"
   },
   "dependencies": {
+    "@dnd-kit/core": "^6.3.1",
+    "@dnd-kit/sortable": "^10.0.0",
+    "@dnd-kit/utilities": "^3.2.2",
     "@hookform/resolvers": "^3.10.0",
     "@mantine/core": "^8.3.5",
+    "@mantine/dates": "^8.3.5",
+    "@mantine/hooks": "^8.3.5",
     "@mantine/notifications": "^8.3.5",
     "@neondatabase/serverless": "^1.0.2",
     "@next/bundle-analyzer": "^16.0.0",
@@ -38,6 +43,7 @@
     "clsx": "^2.1.1",
     "cookie": "^1.0.2",
     "date-fns": "^3.6.0",
+    "dayjs": "^1.11.18",
     "drizzle-orm": "^0.44.6",
     "jsonwebtoken": "^9.0.2",
     "next": "^16.0.0",
