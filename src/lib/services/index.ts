@@ -3,22 +3,27 @@
  * Exports all service classes and utilities
  */
 
-export { BaseService } from './base.service';
-export {
-  NotFoundError,
-  UnauthorizedError,
-  ValidationError,
-  ConflictError,
-  getErrorStatus,
-  getErrorMessage,
-} from './base.service';
+// Error utilities (for API routes)
+export function getErrorStatus(error: Error): number {
+  if (error.message.includes('not found')) return 404;
+  if (error.message.includes('Unauthorized')) return 401;
+  if (error.message.includes('Cannot delete')) return 409;
+  if (error.message.includes('Version mismatch')) return 409;
+  return 500;
+}
 
-export { PillarsService, pillarsService } from './pillars.service';
-export type { CreatePillarInput, UpdatePillarInput } from './pillars.service';
+export function getErrorMessage(error: Error): string {
+  return error.message || 'An unexpected error occurred';
+}
 
-export { ThemesService, themesService } from './themes.service';
-export type { CreateThemeInput, UpdateThemeInput } from './themes.service';
+// V2 Services
+export { pillarsServiceV2 } from './pillars.service.v2';
+export type { CreatePillarInput, UpdatePillarInput } from './pillars.service.v2';
 
-export { TasksService, tasksService } from './tasks.service';
-export type { CreateTaskInput, UpdateTaskInput } from './tasks.service';
+export { themesServiceV2 } from './themes.service.v2';
+export type { CreateThemeInput as CreateThemeInputV2, UpdateThemeInput as UpdateThemeInputV2 } from './themes.service.v2';
 
+export { tasksServiceV2 } from './tasks.service.v2';
+export type { CreateTaskInput as CreateTaskInputV2, UpdateTaskInput as UpdateTaskInputV2 } from './tasks.service.v2';
+
+export { initializePlanningDocs, arePlanningDocsInitialized } from './user-init.service';
