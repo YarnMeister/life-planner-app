@@ -133,35 +133,43 @@ const DEFAULT_THEMES: ThemesDoc = [
  * Initialize planning documents for a new user
  */
 export async function initializePlanningDocs(userId: string): Promise<void> {
+  console.log(`[initializePlanningDocs] Starting for user ${userId}`);
+
   // Check if already initialized
   const existingPillars = await planningRepository.getDoc(userId, 'pillars');
   if (existingPillars) {
-    console.log(`Planning docs already initialized for user ${userId}`);
+    console.log(`[initializePlanningDocs] Planning docs already initialized for user ${userId}`);
     return;
   }
 
+  console.log(`[initializePlanningDocs] Creating pillars doc with ${DEFAULT_PILLARS.length} pillars`);
   // Create pillars doc
-  await planningRepository.createDoc<PillarsDoc>(
+  const pillarsDoc = await planningRepository.createDoc<PillarsDoc>(
     userId,
     'pillars',
     DEFAULT_PILLARS
   );
+  console.log(`[initializePlanningDocs] Pillars doc created:`, pillarsDoc.id);
 
+  console.log(`[initializePlanningDocs] Creating themes doc with ${DEFAULT_THEMES.length} themes`);
   // Create themes doc
-  await planningRepository.createDoc<ThemesDoc>(
+  const themesDoc = await planningRepository.createDoc<ThemesDoc>(
     userId,
     'themes',
     DEFAULT_THEMES
   );
+  console.log(`[initializePlanningDocs] Themes doc created:`, themesDoc.id);
 
+  console.log(`[initializePlanningDocs] Creating empty tasks doc`);
   // Create empty tasks doc
-  await planningRepository.createDoc<TasksDoc>(
+  const tasksDoc = await planningRepository.createDoc<TasksDoc>(
     userId,
     'tasks',
     []
   );
+  console.log(`[initializePlanningDocs] Tasks doc created:`, tasksDoc.id);
 
-  console.log(`Planning docs initialized for user ${userId}`);
+  console.log(`[initializePlanningDocs] ✅ All planning docs initialized for user ${userId}`);
 }
 
 /**

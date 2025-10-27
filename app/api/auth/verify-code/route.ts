@@ -133,7 +133,13 @@ export async function POST(req: NextRequest) {
     // Initialize planning docs for new users
     if (isNewUser) {
       console.log('🌱 Initializing planning docs for new user:', user[0].id);
-      await initializePlanningDocs(user[0].id);
+      try {
+        await initializePlanningDocs(user[0].id);
+        console.log('✅ Planning docs initialization completed');
+      } catch (error) {
+        console.error('❌ Failed to initialize planning docs:', error);
+        // Don't fail the auth flow, but log the error
+      }
     }
 
     // Generate JWT token
