@@ -6,7 +6,8 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { getSession } from '@/lib/auth/session';
-import { pillarsService, getErrorStatus, getErrorMessage } from '@/lib/services';
+import { pillarsServiceV2 } from '@/lib/services/pillars.service.v2';
+import { getErrorStatus, getErrorMessage } from '@/lib/services';
 import { z } from 'zod';
 
 // Validation schemas
@@ -30,7 +31,7 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    const pillars = await pillarsService.getPillars(session.user.id);
+    const pillars = await pillarsServiceV2.getPillars(session.user.id);
     return NextResponse.json({ data: pillars });
   } catch (error) {
     console.error('Error fetching pillars:', error);
@@ -58,7 +59,7 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const validatedData = createPillarSchema.parse(body);
 
-    const pillar = await pillarsService.createPillar(validatedData, session.user.id);
+    const pillar = await pillarsServiceV2.createPillar(validatedData, session.user.id);
     return NextResponse.json({ data: pillar }, { status: 201 });
   } catch (error) {
     if (error instanceof z.ZodError) {

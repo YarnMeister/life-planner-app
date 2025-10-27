@@ -7,12 +7,13 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { getSession } from '@/lib/auth/session';
-import { themesService, getErrorStatus, getErrorMessage } from '@/lib/services';
+import { themesServiceV2 } from '@/lib/services/themes.service.v2';
+import { getErrorStatus, getErrorMessage } from '@/lib/services';
 import { z } from 'zod';
 
 const updateThemeSchema = z.object({
   name: z.string().min(1, 'Name is required').max(100).optional(),
-  ratingPercent: z.number().min(0).max(100).optional(),
+  rating: z.number().min(0).max(100).optional(),
   lastReflectionNote: z.string().optional(),
 });
 
@@ -34,7 +35,7 @@ export async function GET(
     }
 
     const { id } = await params;
-    const theme = await themesService.getThemeWithTasks(id, session.user.id);
+    const theme = await themesServiceV2.getThemeWithTasks(id, session.user.id);
     return NextResponse.json({ data: theme });
   } catch (error) {
     console.error('Error fetching theme:', error);
@@ -66,7 +67,7 @@ export async function PATCH(
     const validatedData = updateThemeSchema.parse(body);
 
     const { id } = await params;
-    const theme = await themesService.updateTheme(id, validatedData, session.user.id);
+    const theme = await themesServiceV2.updateTheme(id, validatedData, session.user.id);
     return NextResponse.json({ data: theme });
   } catch (error) {
     if (error instanceof z.ZodError) {
@@ -102,7 +103,7 @@ export async function DELETE(
     }
 
     const { id } = await params;
-    await themesService.deleteTheme(id, session.user.id);
+    await themesServiceV2.deleteTheme(id, session.user.id);
     return NextResponse.json({ success: true });
   } catch (error) {
     console.error('Error deleting theme:', error);
