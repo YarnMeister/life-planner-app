@@ -5,7 +5,6 @@ import { db, authCodes, users, failedAuthAttempts } from '@/lib/auth/db.server';
 import { signToken, verifyAuthCode } from '@/lib/auth/jwt';
 import { serialize } from 'cookie';
 import { normalizeEmail } from '@/lib/auth/utils';
-import { initializePlanningDocs } from '@/lib/services/user-init.service';
 
 const verifySchema = z.object({
   email: z.string().email('Invalid email address'),
@@ -113,40 +112,23 @@ export async function POST(req: NextRequest) {
       .set({ used: true })
       .where(eq(authCodes.id, matchedCode.id));
 
-    // Get or create user (for first-time login)
-    console.log('🔍 Checking if user exists:', email);
-    let user = await db
+    // Get user (should always exist since request-code creates it)
+    console.log('🔍 Looking up user:', email);
+    const user = await db
       .select()
       .from(users)
       .where(eq(users.email, email))
       .limit(1);
 
-    console.log('🔍 User query result:', user.length > 0 ? `Found user ${user[0].id}` : 'No user found');
-
-    let isNewUser = false;
     if (user.length === 0) {
-      console.log('📝 Creating new user for:', email);
-      const newUser = await db.insert(users).values({
-        email,
-      }).returning();
-      user = newUser;
-      isNewUser = true;
-      console.log('✅ New user created:', user[0].id);
-    } else {
-      console.log('ℹ️  Existing user logging in:', user[0].id);
+      console.error('❌ User not found after code verification - this should not happen!');
+      return NextResponse.json(
+        { error: 'User not found' },
+        { status: 404 }
+      );
     }
 
-    // Initialize planning docs for new users
-    if (isNewUser) {
-      console.log('🌱 Initializing planning docs for new user:', user[0].id);
-      try {
-        await initializePlanningDocs(user[0].id);
-        console.log('✅ Planning docs initialization completed');
-      } catch (error) {
-        console.error('❌ Failed to initialize planning docs:', error);
-        // Don't fail the auth flow, but log the error
-      }
-    }
+    console.log('✅ User found:', user[0].id);
 
     // Generate JWT token
     const token = signToken({
