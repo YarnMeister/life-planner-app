@@ -114,11 +114,14 @@ export async function POST(req: NextRequest) {
       .where(eq(authCodes.id, matchedCode.id));
 
     // Get or create user (for first-time login)
+    console.log('🔍 Checking if user exists:', email);
     let user = await db
       .select()
       .from(users)
       .where(eq(users.email, email))
       .limit(1);
+
+    console.log('🔍 User query result:', user.length > 0 ? `Found user ${user[0].id}` : 'No user found');
 
     let isNewUser = false;
     if (user.length === 0) {
@@ -128,6 +131,9 @@ export async function POST(req: NextRequest) {
       }).returning();
       user = newUser;
       isNewUser = true;
+      console.log('✅ New user created:', user[0].id);
+    } else {
+      console.log('ℹ️  Existing user logging in:', user[0].id);
     }
 
     // Initialize planning docs for new users

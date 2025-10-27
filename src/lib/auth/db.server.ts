@@ -21,12 +21,13 @@ let db: any;
 
 if (useMockDb) {
   // Use mock database for development without real DB
-  if (process.env.NODE_ENV !== 'production') {
-    console.log('🗄️  Using MOCK DATABASE (in-memory storage)');
-  }
+  console.log('🗄️  Using MOCK DATABASE (in-memory storage)');
+  console.log('🗄️  DATABASE_URL:', DATABASE_URL);
   db = mockDb as any;
 } else {
   // Create Neon serverless connection with WebSocket support for multi-statement SQL
+  console.log('🗄️  Using REAL DATABASE');
+  console.log('🗄️  DATABASE_URL:', DATABASE_URL.replace(/:[^:@]+@/, ':****@')); // Redact password
   const sql = neon(DATABASE_URL, {
     // Neon serverless driver handles connection pooling automatically
     fetchOptions: {
