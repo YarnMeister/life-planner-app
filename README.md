@@ -263,6 +263,47 @@ npm run db:test-connection
 
 > **Note:** The template doesn't include a `db:verify-migration` script by default. Once you start creating migrations specific to your schema, you can add a custom verification script in `scripts/verify-migration.cjs` to validate your tables, lookup data, and constraints. See the [Migration Guide](./docs/migrations.md) for examples.
 
+### 🎯 Automatic Data Seeding
+
+**This app automatically seeds new users with default Life Planner data!**
+
+When a new user is created (via signup), a **database trigger** automatically creates:
+- ✅ **5 Pillars:** Health, Finance, Social, Family, Work
+- ✅ **25 Themes** across all pillars (5 themes per pillar)
+- ✅ **0 Tasks** - Users start with empty task lists
+
+**How it works:**
+1. Migration `0003_seed_default_pillars_themes.sql` creates a PostgreSQL trigger
+2. The trigger fires **AFTER INSERT** on the `users` table
+3. It automatically inserts pillars and themes for the new user
+4. This happens **transparently** - no application code needed!
+
+**What this means:**
+- 🚀 **New users get instant structure** - No empty state, ready to use immediately
+- 🔄 **Consistent data** - Every user gets the same starting pillars and themes
+- 🛡️ **Database-level guarantee** - Can't create a user without their default data
+- 🧪 **Works everywhere** - Development, staging, production - all environments
+
+**Testing the trigger:**
+```bash
+# Create a new user (via signup or direct SQL)
+INSERT INTO users (id, email, created_at, updated_at)
+VALUES (gen_random_uuid(), 'test@example.com', NOW(), NOW());
+
+# Check that pillars and themes were auto-created
+SELECT COUNT(*) FROM pillars WHERE user_id = (SELECT id FROM users WHERE email = 'test@example.com');
+-- Should return: 5
+
+SELECT COUNT(*) FROM themes WHERE user_id = (SELECT id FROM users WHERE email = 'test@example.com');
+-- Should return: 25
+```
+
+**Important Notes:**
+- ⚠️ The trigger only fires for **NEW** users created after migration 0003 runs
+- ⚠️ Existing users (created before migration 0003) will NOT be auto-seeded
+- ⚠️ If you nuke the database and re-run migrations, you'll need to create new users to trigger seeding
+- ✅ The trigger is **idempotent** - it won't duplicate data if run multiple times
+
 ### Schema Updates
 
 1. Edit `drizzle/schema.ts`
