@@ -145,7 +145,7 @@ export function TasksTable() {
   } = useLifeOS();
 
   const [searchQuery, setSearchQuery] = useState('');
-  const [statusFilter, setStatusFilter] = useState<'all' | 'open' | 'done'>('all');
+  const [statusFilter, setStatusFilter] = useState<'all' | 'todo' | 'doing' | 'done' | 'blocked' | 'archived'>('all');
 
   const sensors = useSensors(
     useSensor(PointerSensor),

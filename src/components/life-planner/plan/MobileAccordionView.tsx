@@ -32,9 +32,9 @@ export function MobileAccordionView() {
     return pillar.domain === domainFilter;
   });
 
-  const handleTaskComplete = async (taskId: string, currentStatus: 'open' | 'done') => {
+  const handleTaskComplete = async (taskId: string, currentStatus: string) => {
     try {
-      await updateTask(taskId, { status: currentStatus === 'open' ? 'done' : 'open' });
+      await updateTask(taskId, { status: currentStatus === 'done' ? 'todo' : 'done' });
     } catch (error) {
       console.error('Failed to update task:', error);
     }

@@ -152,7 +152,7 @@ export function ThemesColumn() {
                     <div style={{ flex: 1 }}>
                       <Text fw={500}>{theme.name}</Text>
                       <Text size="sm" c="dimmed">
-                        Rating: {theme.ratingPercent}%
+                        Rating: {theme.rating}%
                       </Text>
                     </div>
                   </Group>

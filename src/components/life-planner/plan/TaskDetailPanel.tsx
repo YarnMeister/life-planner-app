@@ -21,7 +21,7 @@ interface TaskFormData {
   themeId: string;
   timeEstimate?: '15m' | '30m' | '1h' | '2h+';
   impact?: 'H' | 'M' | 'L';
-  status: 'open' | 'done';
+  status: 'todo' | 'doing' | 'done' | 'blocked' | 'archived';
   dueDate?: string;
   notes: string;
   taskType?: 'adhoc' | 'recurring';
@@ -49,7 +49,7 @@ export function TaskDetailPanel() {
     themeId: selectedThemeIds[0] || '',
     timeEstimate: undefined,
     impact: undefined,
-    status: 'open',
+    status: 'todo',
     dueDate: undefined,
     notes: '',
     taskType: 'adhoc',
@@ -91,7 +91,7 @@ export function TaskDetailPanel() {
         themeId: selectedThemeIds[0] || '',
         timeEstimate: undefined,
         impact: undefined,
-        status: 'open',
+        status: 'todo',
         dueDate: undefined,
         notes: '',
         taskType: 'adhoc',

@@ -44,7 +44,7 @@ export const pillarsAPI = {
     return handleResponse(response);
   },
 
-  async create(data: Omit<Pillar, 'id' | 'avgPercent'>): Promise<Pillar> {
+  async create(data: Omit<Pillar, 'id' | 'rating' | 'createdAt' | 'updatedAt'>): Promise<Pillar> {
     const response = await fetch(`${API_BASE}/pillars`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -84,7 +84,7 @@ export const themesAPI = {
     return handleResponse(response);
   },
 
-  async create(data: Omit<Theme, 'id'>): Promise<Theme> {
+  async create(data: Omit<Theme, 'id' | 'rating' | 'createdAt' | 'updatedAt'>): Promise<Theme> {
     const response = await fetch(`${API_BASE}/themes`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -112,9 +112,10 @@ export const themesAPI = {
 
 // Tasks API
 export const tasksAPI = {
-  async getAll(themeId?: string, status?: 'open' | 'done'): Promise<Task[]> {
+  async getAll(themeId?: string, pillarId?: string, status?: 'todo' | 'doing' | 'done' | 'blocked' | 'archived'): Promise<Task[]> {
     const url = new URL(`${API_BASE}/tasks`, window.location.origin);
     if (themeId) url.searchParams.set('themeId', themeId);
+    if (pillarId) url.searchParams.set('pillarId', pillarId);
     if (status) url.searchParams.set('status', status);
     const response = await fetch(url.toString());
     return handleResponse(response);
@@ -125,7 +126,7 @@ export const tasksAPI = {
     return handleResponse(response);
   },
 
-  async create(data: Omit<Task, 'id'>): Promise<Task> {
+  async create(data: Omit<Task, 'id' | 'createdAt' | 'updatedAt'>): Promise<Task> {
     const response = await fetch(`${API_BASE}/tasks`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
