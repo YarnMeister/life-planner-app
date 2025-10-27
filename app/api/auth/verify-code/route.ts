@@ -5,6 +5,7 @@ import { db, authCodes, users, failedAuthAttempts } from '@/lib/auth/db.server';
 import { signToken, verifyAuthCode } from '@/lib/auth/jwt';
 import { serialize } from 'cookie';
 import { normalizeEmail } from '@/lib/auth/utils';
+import { initializePlanningDocs } from '@/lib/services/user-init.service';
 
 const verifySchema = z.object({
   email: z.string().email('Invalid email address'),
@@ -119,12 +120,20 @@ export async function POST(req: NextRequest) {
       .where(eq(users.email, email))
       .limit(1);
 
+    let isNewUser = false;
     if (user.length === 0) {
       console.log('📝 Creating new user for:', email);
       const newUser = await db.insert(users).values({
         email,
       }).returning();
       user = newUser;
+      isNewUser = true;
+    }
+
+    // Initialize planning docs for new users
+    if (isNewUser) {
+      console.log('🌱 Initializing planning docs for new user:', user[0].id);
+      await initializePlanningDocs(user[0].id);
     }
 
     // Generate JWT token
