@@ -263,46 +263,61 @@ npm run db:test-connection
 
 > **Note:** The template doesn't include a `db:verify-migration` script by default. Once you start creating migrations specific to your schema, you can add a custom verification script in `scripts/verify-migration.cjs` to validate your tables, lookup data, and constraints. See the [Migration Guide](./docs/migrations.md) for examples.
 
-### 🎯 Automatic Data Seeding
+### 🎯 Automatic Data Initialization
 
-**This app automatically seeds new users with default Life Planner data!**
+**This app automatically initializes new users with default Life Planner data!**
 
-When a new user is created (via signup), a **database trigger** automatically creates:
-- ✅ **5 Pillars:** Health, Finance, Social, Family, Work
-- ✅ **25 Themes** across all pillars (5 themes per pillar)
-- ✅ **0 Tasks** - Users start with empty task lists
+When a new user requests a login code (via `/api/auth/request-code`), the system automatically creates three JSON documents:
+- ✅ **5 Pillars:** Health, Finance, Social, Family, Work (stored in `planning_doc` table, kind='pillars')
+- ✅ **25 Themes** across all pillars (5 themes per pillar) (stored in `planning_doc` table, kind='themes')
+- ✅ **0 Tasks** - Users start with empty task lists (stored in `planning_doc` table, kind='tasks')
 
 **How it works:**
-1. Migration `0003_seed_default_pillars_themes.sql` creates a PostgreSQL trigger
-2. The trigger fires **AFTER INSERT** on the `users` table
-3. It automatically inserts pillars and themes for the new user
-4. This happens **transparently** - no application code needed!
+1. User enters email and requests login code at `/api/auth/request-code`
+2. Route handler calls `userInitService.ensureUserInitialized(userId)`
+3. Service checks if `planning_doc` records exist for the user
+4. If not, creates three JSON documents (pillars, themes, tasks) with default data
+5. All data is stored as JSONB arrays in the `planning_doc` table
+
+**Architecture:**
+- **Single Table Design:** All planning data stored in `planning_doc` table with JSONB columns
+- **Document Types:** Each user has 3 documents (kind: 'pillars' | 'themes' | 'tasks')
+- **Optimistic Locking:** Each document has a `version` field for concurrency control
+- **JSON Patch:** Updates use RFC-6902 JSON Patch operations for atomic changes
+- **GIN Indexes:** Fast JSONB queries using PostgreSQL Generalized Inverted Indexes
 
 **What this means:**
 - 🚀 **New users get instant structure** - No empty state, ready to use immediately
 - 🔄 **Consistent data** - Every user gets the same starting pillars and themes
-- 🛡️ **Database-level guarantee** - Can't create a user without their default data
+- 🛡️ **Application-level guarantee** - Initialization happens in `request-code` route
 - 🧪 **Works everywhere** - Development, staging, production - all environments
+- ⚡ **Fast queries** - JSONB with GIN indexes for efficient filtering and updates
 
-**Testing the trigger:**
+**Testing initialization:**
 ```bash
-# Create a new user (via signup or direct SQL)
-INSERT INTO users (id, email, created_at, updated_at)
-VALUES (gen_random_uuid(), 'test@example.com', NOW(), NOW());
+# Request a login code (triggers initialization)
+curl -X POST http://localhost:3000/api/auth/request-code \
+  -H "Content-Type: application/json" \
+  -d '{"email": "test@example.com"}'
 
-# Check that pillars and themes were auto-created
-SELECT COUNT(*) FROM pillars WHERE user_id = (SELECT id FROM users WHERE email = 'test@example.com');
--- Should return: 5
+# Verify planning documents were created
+SELECT kind, jsonb_array_length(data) as item_count, version
+FROM planning_doc
+WHERE user_id = (SELECT id FROM users WHERE email = 'test@example.com');
 
-SELECT COUNT(*) FROM themes WHERE user_id = (SELECT id FROM users WHERE email = 'test@example.com');
--- Should return: 25
+-- Should return:
+-- kind     | item_count | version
+-- pillars  | 5          | 1
+-- themes   | 25         | 1
+-- tasks    | 0          | 1
 ```
 
 **Important Notes:**
-- ⚠️ The trigger only fires for **NEW** users created after migration 0003 runs
-- ⚠️ Existing users (created before migration 0003) will NOT be auto-seeded
-- ⚠️ If you nuke the database and re-run migrations, you'll need to create new users to trigger seeding
-- ✅ The trigger is **idempotent** - it won't duplicate data if run multiple times
+- ✅ Initialization happens on **first login code request** (not on user creation)
+- ✅ Service is **idempotent** - won't duplicate data if called multiple times
+- ✅ All planning data stored as **JSON documents** in `planning_doc` table
+- ✅ Uses **optimistic locking** with version field to prevent concurrent modification conflicts
+- 📝 See `src/lib/services/user-init.service.ts` for implementation details
 
 ### Schema Updates
 

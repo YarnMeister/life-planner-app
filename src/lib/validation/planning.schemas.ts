@@ -62,6 +62,9 @@ export const zTask = z.object({
   ratingImpact: z.number().int().optional(),
   rank: z.number().int().optional(),
   order: z.number().int().optional(),
+  // Date fields: dueDate is YYYY-MM-DD string, others are ISO 8601 datetime strings
+  // All datetime fields must use .toISOString() when setting timestamps
+  // UI must enforce YYYY-MM-DD format for dueDate (e.g., DateInput with valueFormat="YYYY-MM-DD")
   dueDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(), // YYYY-MM-DD
   dueAt: z.string().datetime().optional(),
   startedAt: z.string().datetime().optional(),

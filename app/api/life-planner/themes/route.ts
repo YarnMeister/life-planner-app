@@ -11,6 +11,8 @@ import { getErrorStatus, getErrorMessage } from '@/lib/services';
 import { z } from 'zod';
 
 // Validation schemas
+// Note: rating defaults to 0 if not provided by client
+// previousRating is not set on create, only on subsequent updates
 const createThemeSchema = z.object({
   pillarId: z.string().uuid('Invalid pillar ID'),
   name: z.string().min(1, 'Name is required').max(100),

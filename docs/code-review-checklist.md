@@ -1,4 +1,4 @@
-Can you review this PR: https://github.com/YarnMeister/life-planner-app/pull/3 which has implemented RTS-52. The overall context is in RTS-51 and the acceptance criteria in RTS-52.
+Can you review this PR: https://github.com/YarnMeister/life-planner-app/pull/4 which has implemented RTS-56. The overall context is in RTS-51 and the acceptance criteria in RTS-52.
 Review using the checklist below and provide any gaps, improvements or recommends as an independent critical reviewer:
 - Ensure code diff of main to branch aligns with the stated requirements
 - Check implementation for each individual change is efficient and best possible approach (against best prctices and alternatives)

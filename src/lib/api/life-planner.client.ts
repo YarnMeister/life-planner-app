@@ -22,6 +22,8 @@ export class APIError extends Error {
 async function handleResponse<T>(response: Response): Promise<T> {
   if (!response.ok) {
     const error = await response.json().catch(() => ({}));
+    // 409 Conflict indicates version mismatch (optimistic locking)
+    // Clients should refresh state and retry the operation
     throw new APIError(
       response.status,
       error.details,
@@ -84,6 +86,8 @@ export const themesAPI = {
     return handleResponse(response);
   },
 
+  // Note: rating defaults to 0 on server via Zod schema default
+  // previousRating is not set on create, only on subsequent updates
   async create(data: Pick<Theme, 'pillarId' | 'name'>): Promise<Theme> {
     const response = await fetch(`${API_BASE}/themes`, {
       method: 'POST',
