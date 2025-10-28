@@ -222,6 +222,7 @@ export function TaskDetailPanel() {
           placeholder="Select due date"
           value={dueDate}
           onChange={(value) => setDueDate(value as Date | null)}
+          valueFormat="YYYY-MM-DD"
           clearable
         />
 
