@@ -1,10 +1,10 @@
-import { planningRepository } from '@/lib/repositories/planning.repository';
+import { planningRepository, VersionMismatchError } from '@/lib/repositories/planning.repository';
 import { Pillar, PillarsDoc, ThemesDoc } from '@/types/planning.types';
-import { 
-  findItemIndex, 
-  createAddItemPatch, 
-  createUpdateItemPatch, 
-  createRemoveItemPatch 
+import {
+  findItemIndex,
+  createAddItemPatch,
+  createUpdateItemPatch,
+  createRemoveItemPatch
 } from '@/lib/utils/json-patch.utils';
 import { v4 as uuidv4 } from 'uuid';
 
@@ -22,6 +22,33 @@ export interface UpdatePillarInput {
 }
 
 export class PillarsServiceV2 {
+  /**
+   * Retry wrapper for handling version conflicts
+   * Automatically retries once if a VersionMismatchError occurs
+   */
+  private async withRetry<T>(
+    operation: () => Promise<T>,
+    maxRetries: number = 1
+  ): Promise<T> {
+    let lastError: Error | null = null;
+
+    for (let attempt = 0; attempt <= maxRetries; attempt++) {
+      try {
+        return await operation();
+      } catch (error) {
+        if (error instanceof VersionMismatchError && attempt < maxRetries) {
+          // Version conflict - retry once with fresh data
+          lastError = error;
+          continue;
+        }
+        // Not a version error, or out of retries
+        throw error;
+      }
+    }
+
+    throw lastError!;
+  }
+
   /**
    * Get all pillars for a user
    */
@@ -46,33 +73,35 @@ export class PillarsServiceV2 {
    * Create a new pillar
    */
   async createPillar(input: CreatePillarInput, userId: string): Promise<Pillar> {
-    const doc = await planningRepository.getDoc<PillarsDoc>(userId, 'pillars');
-    if (!doc) {
-      throw new Error('Pillars document not initialized');
-    }
+    return this.withRetry(async () => {
+      const doc = await planningRepository.getDoc<PillarsDoc>(userId, 'pillars');
+      if (!doc) {
+        throw new Error('Pillars document not initialized');
+      }
 
-    const now = new Date().toISOString();
-    const newPillar: Pillar = {
-      id: uuidv4(),
-      name: input.name.trim(),
-      color: input.color.trim(),
-      domain: input.domain,
-      rating: 0,
-      order: doc.data.length,
-      createdAt: now,
-      updatedAt: now,
-    };
+      const now = new Date().toISOString();
+      const newPillar: Pillar = {
+        id: uuidv4(),
+        name: input.name.trim(),
+        color: input.color.trim(),
+        domain: input.domain,
+        rating: 0,
+        order: doc.data.length,
+        createdAt: now,
+        updatedAt: now,
+      };
 
-    // Use JSON Patch to add
-    const patch = createAddItemPatch(newPillar);
-    await planningRepository.patchDoc<PillarsDoc>(
-      userId,
-      'pillars',
-      patch,
-      doc.version
-    );
+      // Use JSON Patch to add
+      const patch = createAddItemPatch(newPillar);
+      await planningRepository.patchDoc<PillarsDoc>(
+        userId,
+        'pillars',
+        patch,
+        doc.version
+      );
 
-    return newPillar;
+      return newPillar;
+    });
   }
 
   /**
@@ -83,87 +112,93 @@ export class PillarsServiceV2 {
     input: UpdatePillarInput,
     userId: string
   ): Promise<Pillar> {
-    const doc = await planningRepository.getDoc<PillarsDoc>(userId, 'pillars');
-    if (!doc) {
-      throw new Error('Pillars document not found');
-    }
+    return this.withRetry(async () => {
+      const doc = await planningRepository.getDoc<PillarsDoc>(userId, 'pillars');
+      if (!doc) {
+        throw new Error('Pillars document not found');
+      }
 
-    const index = findItemIndex(doc.data, id);
-    const pillar = doc.data[index];
+      const index = findItemIndex(doc.data, id);
+      const pillar = doc.data[index];
 
-    const updates: Record<string, unknown> = {
-      updatedAt: new Date().toISOString(),
-    };
-    if (input.name !== undefined) updates.name = input.name.trim();
-    if (input.color !== undefined) updates.color = input.color.trim();
-    if (input.domain !== undefined) updates.domain = input.domain;
-    if (input.rating !== undefined) updates.rating = input.rating;
+      const updates: Record<string, unknown> = {
+        updatedAt: new Date().toISOString(),
+      };
+      if (input.name !== undefined) updates.name = input.name.trim();
+      if (input.color !== undefined) updates.color = input.color.trim();
+      if (input.domain !== undefined) updates.domain = input.domain;
+      if (input.rating !== undefined) updates.rating = input.rating;
 
-    const patch = createUpdateItemPatch(index, updates);
-    await planningRepository.patchDoc<PillarsDoc>(
-      userId,
-      'pillars',
-      patch,
-      doc.version
-    );
+      const patch = createUpdateItemPatch(index, updates);
+      await planningRepository.patchDoc<PillarsDoc>(
+        userId,
+        'pillars',
+        patch,
+        doc.version
+      );
 
-    return { ...pillar, ...updates } as Pillar;
+      return { ...pillar, ...updates } as Pillar;
+    });
   }
 
   /**
    * Delete a pillar (with dependency check)
    */
   async deletePillar(id: string, userId: string): Promise<void> {
-    // Check for dependent themes
-    const themesDoc = await planningRepository.getDoc<ThemesDoc>(userId, 'themes');
-    const hasThemes = themesDoc?.data.some((t) => t.pillarId === id);
-    if (hasThemes) {
-      throw new Error('Cannot delete pillar with existing themes');
-    }
+    return this.withRetry(async () => {
+      // Check for dependent themes
+      const themesDoc = await planningRepository.getDoc<ThemesDoc>(userId, 'themes');
+      const hasThemes = themesDoc?.data.some((t) => t.pillarId === id);
+      if (hasThemes) {
+        throw new Error('Cannot delete pillar with existing themes');
+      }
 
-    const doc = await planningRepository.getDoc<PillarsDoc>(userId, 'pillars');
-    if (!doc) {
-      throw new Error('Pillars document not found');
-    }
+      const doc = await planningRepository.getDoc<PillarsDoc>(userId, 'pillars');
+      if (!doc) {
+        throw new Error('Pillars document not found');
+      }
 
-    const index = findItemIndex(doc.data, id);
-    const patch = createRemoveItemPatch(index);
-    await planningRepository.patchDoc<PillarsDoc>(
-      userId,
-      'pillars',
-      patch,
-      doc.version
-    );
+      const index = findItemIndex(doc.data, id);
+      const patch = createRemoveItemPatch(index);
+      await planningRepository.patchDoc<PillarsDoc>(
+        userId,
+        'pillars',
+        patch,
+        doc.version
+      );
+    });
   }
 
   /**
    * Recalculate pillar average from themes
    */
   async recalculateAverage(pillarId: string, userId: string): Promise<void> {
-    const themesDoc = await planningRepository.getDoc<ThemesDoc>(userId, 'themes');
-    if (!themesDoc) return;
+    return this.withRetry(async () => {
+      const themesDoc = await planningRepository.getDoc<ThemesDoc>(userId, 'themes');
+      if (!themesDoc) return;
 
-    const pillarThemes = themesDoc.data.filter((t) => t.pillarId === pillarId);
-    if (pillarThemes.length === 0) return;
+      const pillarThemes = themesDoc.data.filter((t) => t.pillarId === pillarId);
+      if (pillarThemes.length === 0) return;
 
-    const avgRating = Math.round(
-      pillarThemes.reduce((sum, t) => sum + t.rating, 0) / pillarThemes.length
-    );
+      const avgRating = Math.round(
+        pillarThemes.reduce((sum, t) => sum + t.rating, 0) / pillarThemes.length
+      );
 
-    const pillarsDoc = await planningRepository.getDoc<PillarsDoc>(userId, 'pillars');
-    if (!pillarsDoc) return;
+      const pillarsDoc = await planningRepository.getDoc<PillarsDoc>(userId, 'pillars');
+      if (!pillarsDoc) return;
 
-    const index = findItemIndex(pillarsDoc.data, pillarId);
-    const patch = createUpdateItemPatch(index, { 
-      rating: avgRating,
-      updatedAt: new Date().toISOString(),
+      const index = findItemIndex(pillarsDoc.data, pillarId);
+      const patch = createUpdateItemPatch(index, {
+        rating: avgRating,
+        updatedAt: new Date().toISOString(),
+      });
+      await planningRepository.patchDoc<PillarsDoc>(
+        userId,
+        'pillars',
+        patch,
+        pillarsDoc.version
+      );
     });
-    await planningRepository.patchDoc<PillarsDoc>(
-      userId,
-      'pillars',
-      patch,
-      pillarsDoc.version
-    );
   }
 
   /**
