@@ -134,10 +134,10 @@ export function ReflectTab() {
 
       {/* Two-column layout */}
       <Group align="flex-start" gap="md" style={{ flex: 1, overflow: 'hidden' }}>
-        <Box style={{ width: '280px', height: '100%' }}>
+        <Box style={{ flex: '0 0 280px', height: '100%' }}>
           <RatingsPillarsColumn />
         </Box>
-        <Box style={{ flex: 1, height: '100%' }}>
+        <Box style={{ flex: '0 1 560px', maxWidth: '600px', height: '100%' }}>
           <RatingsThemesColumn />
         </Box>
       </Group>

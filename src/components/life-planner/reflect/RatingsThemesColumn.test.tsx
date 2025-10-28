@@ -73,11 +73,12 @@ describe('RatingsThemesColumn', () => {
     expect(screen.getByText('80%')).toBeInTheDocument();
   });
 
-  it('displays last reflection note', () => {
-    render(<RatingsThemesColumn />);
-    
-    expect(screen.getByText(/Feeling strong!/)).toBeInTheDocument();
-  });
+  // Note: Last reflection note removed from compact layout to keep cards slim
+  // it('displays last reflection note', () => {
+  //   render(<RatingsThemesColumn />);
+  //
+  //   expect(screen.getByText(/Feeling strong!/)).toBeInTheDocument();
+  // });
 
   it('shows prompt when no pillar selected', () => {
     (useLifeOS as ReturnType<typeof vi.fn>).mockReturnValue({

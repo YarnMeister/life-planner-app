@@ -30,17 +30,32 @@ function ThemeRatingCard({ theme, pillarColor, onRatingChange, isSaving }: Theme
   }, [debouncedRating, theme.id, theme.rating, onRatingChange]);
 
   return (
-    <Card padding="md" withBorder style={{ borderLeft: `4px solid ${pillarColor}` }}>
-      <Stack gap="sm">
-        <Group justify="space-between">
-          <Text fw={500}>{theme.name}</Text>
-          {isSaving && <Loader size="xs" />}
-        </Group>
-        
-        <div>
-          <Text size="sm" fw={600} mb="xs" c={pillarColor}>
-            {localRating}%
-          </Text>
+    <Card
+      padding="sm"
+      withBorder
+      style={{
+        borderLeft: `4px solid ${pillarColor}`,
+        minHeight: '80px',
+        height: '80px',
+        display: 'flex',
+        flexDirection: 'column',
+        justifyContent: 'center'
+      }}
+    >
+      <Group gap="md" align="center" wrap="nowrap">
+        {/* Theme name and rating - fixed width */}
+        <div style={{ width: '140px', flexShrink: 0 }}>
+          <Text fw={500} size="sm" lineClamp={1}>{theme.name}</Text>
+          <Group gap="xs" mt={2}>
+            <Text size="sm" fw={600} c={pillarColor}>
+              {localRating}%
+            </Text>
+            {isSaving && <Loader size="xs" />}
+          </Group>
+        </div>
+
+        {/* Slider - takes remaining space */}
+        <div style={{ flex: 1, minWidth: 0 }}>
           <Slider
             value={localRating}
             onChange={setLocalRating}
@@ -58,13 +73,7 @@ function ThemeRatingCard({ theme, pillarColor, onRatingChange, isSaving }: Theme
             }}
           />
         </div>
-
-        {theme.lastReflectionNote && (
-          <Text size="xs" c="dimmed" style={{ fontStyle: 'italic' }}>
-            Note: {theme.lastReflectionNote}
-          </Text>
-        )}
-      </Stack>
+      </Group>
     </Card>
   );
 }
