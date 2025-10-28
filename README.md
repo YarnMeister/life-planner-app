@@ -259,9 +259,15 @@ npm run db:status
 
 # Test database connection
 npm run db:test-connection
+
+# Verify schema matches production (CI/CD)
+npm run db:verify-schema
+
+# Check production database state
+npm run db:check-prod-state
 ```
 
-> **Note:** The template doesn't include a `db:verify-migration` script by default. Once you start creating migrations specific to your schema, you can add a custom verification script in `scripts/verify-migration.cjs` to validate your tables, lookup data, and constraints. See the [Migration Guide](./docs/migrations.md) for examples.
+> **Note:** The `db:verify-schema` and `db:check-prod-state` scripts are useful for CI/CD pipelines to ensure schema consistency across environments. See the [Migration Guide](./docs/migrations.md) for details on migration hygiene and verification strategies.
 
 ### 🎯 Automatic Data Initialization
 
@@ -317,7 +323,32 @@ WHERE user_id = (SELECT id FROM users WHERE email = 'test@example.com');
 - ✅ Service is **idempotent** - won't duplicate data if called multiple times
 - ✅ All planning data stored as **JSON documents** in `planning_doc` table
 - ✅ Uses **optimistic locking** with version field to prevent concurrent modification conflicts
+- ✅ **Automatic retry** - Services retry once on version conflicts for better UX
 - 📝 See `src/lib/services/user-init.service.ts` for implementation details
+
+**Concurrency & Version Conflicts:**
+
+The app uses optimistic locking to handle concurrent edits:
+1. Each document has a `version` field that increments on every update
+2. Updates include the expected version number
+3. If versions don't match (concurrent edit), a `VersionMismatchError` is thrown
+4. Services automatically retry once with fresh data
+5. If retry fails, client receives 409 Conflict and can refresh
+
+**Example flow:**
+```
+User A fetches doc (version 5) → User B fetches doc (version 5)
+User A saves → version becomes 6 ✅
+User B tries to save with version 5 → VersionMismatchError caught
+Service retries: fetch fresh doc (version 6), rebuild patch, save → version 7 ✅
+User B's operation succeeds automatically!
+```
+
+This prevents:
+- ❌ Lost updates (last-write-wins without awareness)
+- ❌ Duplicate entities on retry (UUIDs generated outside retry)
+- ❌ Corrupted data from non-idempotent retries
+- ✅ Most conflicts resolve automatically without user intervention
 
 ### Schema Updates
 
@@ -481,6 +512,8 @@ Vercel will automatically:
 - `npm run db:status` - Check status
 - `npm run db:lint:migrations` - Lint migrations
 - `npm run db:test-connection` - Test connection
+- `npm run db:verify-schema` - Verify schema matches production (CI/CD)
+- `npm run db:check-prod-state` - Check production database state
 
 ### Testing
 - `npm test` - Run tests once
