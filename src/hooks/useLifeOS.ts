@@ -12,7 +12,7 @@ export function useLifeOS() {
 
   // Pillar operations
   const createPillar = useCallback(
-    async (pillar: Omit<Pillar, 'id' | 'avgPercent'>) => {
+    async (pillar: Omit<Pillar, 'id' | 'rating' | 'createdAt' | 'updatedAt'>) => {
       try {
         return await store.addPillar(pillar);
       } catch (error) {
@@ -49,7 +49,7 @@ export function useLifeOS() {
 
   // Theme operations
   const createTheme = useCallback(
-    async (theme: Omit<Theme, 'id'>) => {
+    async (theme: Omit<Theme, 'id' | 'rating' | 'createdAt' | 'updatedAt'>) => {
       try {
         return await store.addTheme(theme);
       } catch (error) {
@@ -86,7 +86,7 @@ export function useLifeOS() {
 
   // Task operations
   const createTask = useCallback(
-    async (task: Omit<Task, 'id'>) => {
+    async (task: Omit<Task, 'id' | 'createdAt' | 'updatedAt'>) => {
       try {
         return await store.addTask(task);
       } catch (error) {
@@ -206,7 +206,7 @@ export function useLifeOS() {
     // Computed
     getThemesByPillar: store.getThemesByPillar,
     getTasksByTheme: store.getTasksByTheme,
-    recalculatePillarAverage: store.recalculatePillarAverage,
+    recalculatePillarRating: store.recalculatePillarRating,
 
     // Error handling
     clearError: store.clearError,

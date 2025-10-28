@@ -91,9 +91,22 @@ export async function POST(req: NextRequest) {
       .limit(1);
 
     if (existingUser.length === 0) {
-      await db.insert(users).values({
+      console.log('📝 Creating new user in request-code:', email);
+      const newUsers = await db.insert(users).values({
         email,
-      });
+      }).returning();
+
+      // Initialize planning docs for new user
+      const newUser = newUsers[0];
+      console.log('🌱 Initializing planning docs for new user:', newUser.id);
+      try {
+        const { initializePlanningDocs } = await import('@/lib/services/user-init.service');
+        await initializePlanningDocs(newUser.id);
+        console.log('✅ Planning docs initialized successfully');
+      } catch (error) {
+        console.error('❌ Failed to initialize planning docs:', error);
+        // Don't fail the request-code flow
+      }
     }
 
     // Send email (will be logged in console if RESEND_API_KEY not set)

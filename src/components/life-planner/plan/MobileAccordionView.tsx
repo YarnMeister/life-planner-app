@@ -32,9 +32,9 @@ export function MobileAccordionView() {
     return pillar.domain === domainFilter;
   });
 
-  const handleTaskComplete = async (taskId: string, currentStatus: 'open' | 'done') => {
+  const handleTaskComplete = async (taskId: string, currentStatus: string) => {
     try {
-      await updateTask(taskId, { status: currentStatus === 'open' ? 'done' : 'open' });
+      await updateTask(taskId, { status: currentStatus === 'done' ? 'todo' : 'done' });
     } catch (error) {
       console.error('Failed to update task:', error);
     }
@@ -86,7 +86,7 @@ export function MobileAccordionView() {
                   <div>
                     <Text fw={500}>{pillar.name}</Text>
                     <Text size="sm" c="dimmed">
-                      {pillar.avgPercent}% • {pillarThemes.length} themes
+                      {pillar.rating}% • {pillarThemes.length} themes
                     </Text>
                   </div>
                   <Badge size="sm" variant="light">
@@ -113,7 +113,7 @@ export function MobileAccordionView() {
                                   {theme.name}
                                 </Text>
                                 <Text size="xs" c="dimmed">
-                                  {theme.ratingPercent}% • {themeTasks.length} tasks
+                                  {theme.rating}% • {themeTasks.length} tasks
                                 </Text>
                               </div>
                             </Group>

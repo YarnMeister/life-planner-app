@@ -5,7 +5,8 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { getSession } from '@/lib/auth/session';
-import { tasksService, getErrorStatus, getErrorMessage } from '@/lib/services';
+import { tasksServiceV2 } from '@/lib/services/tasks.service.v2';
+import { getErrorStatus, getErrorMessage } from '@/lib/services';
 import { z } from 'zod';
 
 const reorderTasksSchema = z.object({
@@ -30,7 +31,7 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const validatedData = reorderTasksSchema.parse(body);
 
-    const tasks = await tasksService.reorderTasks(
+    const tasks = await tasksServiceV2.reorderTasks(
       validatedData.themeId,
       validatedData.taskIds,
       session.user.id

@@ -5,29 +5,15 @@
     {
       "idx": 0,
       "version": "7",
-      "when": 1761385431594,
-      "tag": "0000_wooden_liz_osborn",
+      "when": 1761543021616,
+      "tag": "0000_furry_squadron_supreme",
       "breakpoints": true
     },
     {
       "idx": 1,
       "version": "7",
-      "when": 1761385941519,
-      "tag": "0001_steep_warstar",
-      "breakpoints": true
-    },
-    {
-      "idx": 2,
-      "version": "7",
-      "when": 1730000000000,
-      "tag": "0002_life_planner_tables",
-      "breakpoints": true
-    },
-    {
-      "idx": 3,
-      "version": "7",
-      "when": 1730000100000,
-      "tag": "0003_seed_default_pillars_themes",
+      "when": 1761543100000,
+      "tag": "0001_planning_doc_indexes",
       "breakpoints": true
     }
   ]

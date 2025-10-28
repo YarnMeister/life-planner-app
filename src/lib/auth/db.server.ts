@@ -4,10 +4,11 @@
  */
 import 'server-only';
 
-import { neon } from '@neondatabase/serverless';
-import { drizzle } from 'drizzle-orm/neon-http';
+import { Pool, neonConfig } from '@neondatabase/serverless';
+import { drizzle } from 'drizzle-orm/neon-serverless';
+import ws from 'ws';
 import * as schema from '../../../drizzle/schema';
-import { users, authCodes, failedAuthAttempts, pillars, themes, tasks } from '../../../drizzle/schema';
+import { users, authCodes, failedAuthAttempts, planningDoc } from '../../../drizzle/schema';
 import { serverEnv } from '../env';
 import { mockDb, isMockDbEnabled } from './db.mock';
 
@@ -21,25 +22,26 @@ let db: any;
 
 if (useMockDb) {
   // Use mock database for development without real DB
-  if (process.env.NODE_ENV !== 'production') {
-    console.log('🗄️  Using MOCK DATABASE (in-memory storage)');
-  }
+  console.log('🗄️  Using MOCK DATABASE (in-memory storage)');
+  console.log('🗄️  DATABASE_URL:', DATABASE_URL);
   db = mockDb as any;
 } else {
-  // Create Neon serverless connection with WebSocket support for multi-statement SQL
-  const sql = neon(DATABASE_URL, {
-    // Neon serverless driver handles connection pooling automatically
-    fetchOptions: {
-      // Ensure proper timeout handling
-    },
-  });
+  // Configure WebSocket for Neon serverless (required for transactions)
+  neonConfig.webSocketConstructor = ws;
+
+  // Create Neon serverless connection with WebSocket support for transactions
+  console.log('🗄️  Using REAL DATABASE with WebSocket (transactions enabled)');
+  console.log('🗄️  DATABASE_URL:', DATABASE_URL.replace(/:[^:@]+@/, ':****@')); // Redact password
+
+  const pool = new Pool({ connectionString: DATABASE_URL });
 
   /**
    * Database client instance
    * Exported as a singleton to prevent connection leaks in development
    * Pass schema to enable query API
+   * Uses WebSocket driver for transaction support
    */
-  db = drizzle(sql, { schema });
+  db = drizzle(pool, { schema });
 }
 
 /**
@@ -53,7 +55,7 @@ export { db };
  * Export schema for convenience
  * This keeps the import surface clean for API routes
  */
-export { users, authCodes, failedAuthAttempts, pillars, themes, tasks };
+export { users, authCodes, failedAuthAttempts, planningDoc };
 
 /**
  * Type exports for use in server components and API routes

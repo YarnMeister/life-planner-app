@@ -20,7 +20,7 @@ import { Theme } from '@/types';
 
 interface ThemeFormData {
   name: string;
-  ratingPercent: number;
+  rating: number;
   lastReflectionNote?: string;
 }
 
@@ -40,7 +40,7 @@ export function ThemesColumn() {
   const [editingTheme, setEditingTheme] = useState<Theme | null>(null);
   const [formData, setFormData] = useState<ThemeFormData>({
     name: '',
-    ratingPercent: 50,
+    rating: 50,
     lastReflectionNote: '',
   });
 
@@ -53,7 +53,7 @@ export function ThemesColumn() {
   const handleOpenCreate = () => {
     if (!selectedPillarId) return;
     setEditingTheme(null);
-    setFormData({ name: '', ratingPercent: 50, lastReflectionNote: '' });
+    setFormData({ name: '', rating: 50, lastReflectionNote: '' });
     setModalOpened(true);
   };
 
@@ -61,7 +61,7 @@ export function ThemesColumn() {
     setEditingTheme(theme);
     setFormData({
       name: theme.name,
-      ratingPercent: theme.ratingPercent,
+      rating: theme.rating,
       lastReflectionNote: theme.lastReflectionNote || '',
     });
     setModalOpened(true);
@@ -152,7 +152,7 @@ export function ThemesColumn() {
                     <div style={{ flex: 1 }}>
                       <Text fw={500}>{theme.name}</Text>
                       <Text size="sm" c="dimmed">
-                        Rating: {theme.ratingPercent}%
+                        Rating: {theme.rating}%
                       </Text>
                     </div>
                   </Group>
@@ -208,11 +208,11 @@ export function ThemesColumn() {
           />
           <div>
             <Text size="sm" fw={500} mb="xs">
-              Rating: {formData.ratingPercent}%
+              Rating: {formData.rating}%
             </Text>
             <Slider
-              value={formData.ratingPercent}
-              onChange={(value) => setFormData({ ...formData, ratingPercent: value })}
+              value={formData.rating}
+              onChange={(value) => setFormData({ ...formData, rating: value })}
               min={0}
               max={100}
               step={5}

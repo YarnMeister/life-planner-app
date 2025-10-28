@@ -27,7 +27,7 @@ export function AllTasksGrid() {
   } = useLifeOS();
 
   const [searchQuery, setSearchQuery] = useState('');
-  const [statusFilter, setStatusFilter] = useState<'all' | 'open' | 'done'>('all');
+  const [statusFilter, setStatusFilter] = useState<'all' | 'todo' | 'doing' | 'done' | 'blocked' | 'archived'>('all');
   const [pillarFilter, setPillarFilter] = useState<string>('all');
 
   // Filter tasks
@@ -56,9 +56,9 @@ export function AllTasksGrid() {
     return result;
   }, [tasks, pillarFilter, statusFilter, searchQuery]);
 
-  const handleTaskComplete = async (taskId: string, currentStatus: 'open' | 'done') => {
+  const handleTaskComplete = async (taskId: string, currentStatus: string) => {
     try {
-      await updateTask(taskId, { status: currentStatus === 'open' ? 'done' : 'open' });
+      await updateTask(taskId, { status: currentStatus === 'done' ? 'todo' : 'done' });
     } catch (error) {
       console.error('Failed to update task:', error);
     }
@@ -103,13 +103,16 @@ export function AllTasksGrid() {
         />
         <Select
           value={statusFilter}
-          onChange={(value) => setStatusFilter(value as 'all' | 'open' | 'done')}
+          onChange={(value) => setStatusFilter(value as 'all' | 'todo' | 'doing' | 'done' | 'blocked' | 'archived')}
           data={[
             { value: 'all', label: 'All' },
-            { value: 'open', label: 'Open' },
+            { value: 'todo', label: 'To Do' },
+            { value: 'doing', label: 'Doing' },
             { value: 'done', label: 'Done' },
+            { value: 'blocked', label: 'Blocked' },
+            { value: 'archived', label: 'Archived' },
           ]}
-          style={{ width: 120 }}
+          style={{ width: 140 }}
         />
       </Group>
 
@@ -212,7 +215,13 @@ export function AllTasksGrid() {
                     <Table.Td>
                       <Badge
                         size="sm"
-                        color={task.status === 'done' ? 'green' : 'blue'}
+                        color={
+                          task.status === 'done' ? 'green' :
+                          task.status === 'doing' ? 'blue' :
+                          task.status === 'blocked' ? 'red' :
+                          task.status === 'archived' ? 'gray' :
+                          'cyan'
+                        }
                         variant="light"
                       >
                         {task.status}

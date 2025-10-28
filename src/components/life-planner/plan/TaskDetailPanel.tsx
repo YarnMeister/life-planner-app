@@ -21,10 +21,10 @@ interface TaskFormData {
   themeId: string;
   timeEstimate?: '15m' | '30m' | '1h' | '2h+';
   impact?: 'H' | 'M' | 'L';
-  status: 'open' | 'done';
+  status: 'todo' | 'doing' | 'done' | 'blocked' | 'archived';
   dueDate?: string;
   notes: string;
-  taskType?: 'adhoc' | 'recurring';
+  taskType: 'adhoc' | 'recurring';
   recurrenceFrequency?: 'daily' | 'weekly' | 'monthly';
   recurrenceInterval?: number;
 }
@@ -49,7 +49,7 @@ export function TaskDetailPanel() {
     themeId: selectedThemeIds[0] || '',
     timeEstimate: undefined,
     impact: undefined,
-    status: 'open',
+    status: 'todo',
     dueDate: undefined,
     notes: '',
     taskType: 'adhoc',
@@ -70,7 +70,7 @@ export function TaskDetailPanel() {
       setFormData({
         title: selectedTask.title,
         description: selectedTask.description || '',
-        pillarId: selectedTask.pillarId,
+        pillarId: selectedTask.pillarId || '',
         themeId: selectedTask.themeId,
         timeEstimate: selectedTask.timeEstimate,
         impact: selectedTask.impact,
@@ -91,7 +91,7 @@ export function TaskDetailPanel() {
         themeId: selectedThemeIds[0] || '',
         timeEstimate: undefined,
         impact: undefined,
-        status: 'open',
+        status: 'todo',
         dueDate: undefined,
         notes: '',
         taskType: 'adhoc',
@@ -118,7 +118,9 @@ export function TaskDetailPanel() {
 
     const taskData = {
       ...formData,
-      dueDate: dueDate ? dueDate.toISOString().split('T')[0] : undefined,
+      dueDate: dueDate
+        ? (dueDate instanceof Date ? dueDate.toISOString().split('T')[0] : dueDate)
+        : undefined,
       rank: selectedTask?.rank || 0,
     };
 
@@ -220,16 +222,20 @@ export function TaskDetailPanel() {
           placeholder="Select due date"
           value={dueDate}
           onChange={(value) => setDueDate(value as Date | null)}
+          valueFormat="YYYY-MM-DD"
           clearable
         />
 
         <Select
           label="Status"
           value={formData.status}
-          onChange={(value) => setFormData({ ...formData, status: value as 'open' | 'done' })}
+          onChange={(value) => setFormData({ ...formData, status: value as 'todo' | 'doing' | 'done' | 'blocked' | 'archived' })}
           data={[
-            { value: 'open', label: 'Open' },
+            { value: 'todo', label: 'To Do' },
+            { value: 'doing', label: 'Doing' },
             { value: 'done', label: 'Done' },
+            { value: 'blocked', label: 'Blocked' },
+            { value: 'archived', label: 'Archived' },
           ]}
         />
 

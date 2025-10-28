@@ -139,7 +139,7 @@ export function PillarsColumn() {
                     </Badge>
                   </Group>
                   <Text size="sm" c="dimmed">
-                    {pillar.avgPercent}% average
+                    {pillar.rating}% rating
                   </Text>
                 </div>
                 <Group gap={4} wrap="nowrap">

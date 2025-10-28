@@ -22,6 +22,8 @@ export class APIError extends Error {
 async function handleResponse<T>(response: Response): Promise<T> {
   if (!response.ok) {
     const error = await response.json().catch(() => ({}));
+    // 409 Conflict indicates version mismatch (optimistic locking)
+    // Clients should refresh state and retry the operation
     throw new APIError(
       response.status,
       error.details,
@@ -44,7 +46,7 @@ export const pillarsAPI = {
     return handleResponse(response);
   },
 
-  async create(data: Omit<Pillar, 'id' | 'avgPercent'>): Promise<Pillar> {
+  async create(data: Pick<Pillar, 'name' | 'color' | 'domain'>): Promise<Pillar> {
     const response = await fetch(`${API_BASE}/pillars`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -84,7 +86,9 @@ export const themesAPI = {
     return handleResponse(response);
   },
 
-  async create(data: Omit<Theme, 'id'>): Promise<Theme> {
+  // Note: rating defaults to 0 on server via Zod schema default
+  // previousRating is not set on create, only on subsequent updates
+  async create(data: Pick<Theme, 'pillarId' | 'name'>): Promise<Theme> {
     const response = await fetch(`${API_BASE}/themes`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -112,9 +116,10 @@ export const themesAPI = {
 
 // Tasks API
 export const tasksAPI = {
-  async getAll(themeId?: string, status?: 'open' | 'done'): Promise<Task[]> {
+  async getAll(themeId?: string, pillarId?: string, status?: 'todo' | 'doing' | 'done' | 'blocked' | 'archived'): Promise<Task[]> {
     const url = new URL(`${API_BASE}/tasks`, window.location.origin);
     if (themeId) url.searchParams.set('themeId', themeId);
+    if (pillarId) url.searchParams.set('pillarId', pillarId);
     if (status) url.searchParams.set('status', status);
     const response = await fetch(url.toString());
     return handleResponse(response);
@@ -125,7 +130,7 @@ export const tasksAPI = {
     return handleResponse(response);
   },
 
-  async create(data: Omit<Task, 'id'>): Promise<Task> {
+  async create(data: Omit<Task, 'id' | 'createdAt' | 'updatedAt'>): Promise<Task> {
     const response = await fetch(`${API_BASE}/tasks`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },

@@ -7,14 +7,15 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { getSession } from '@/lib/auth/session';
-import { pillarsService, getErrorStatus, getErrorMessage } from '@/lib/services';
+import { pillarsServiceV2 } from '@/lib/services/pillars.service.v2';
+import { getErrorStatus, getErrorMessage } from '@/lib/services';
 import { z } from 'zod';
 
 const updatePillarSchema = z.object({
   name: z.string().min(1, 'Name is required').max(100).optional(),
   color: z.string().regex(/^#[0-9A-F]{6}$/i, 'Invalid color format').optional(),
   domain: z.enum(['work', 'personal']).optional(),
-  avgPercent: z.number().min(0).max(100).optional(),
+  rating: z.number().min(0).max(100).optional(),
 });
 
 /**
@@ -35,7 +36,7 @@ export async function GET(
     }
 
     const { id } = await params;
-    const pillar = await pillarsService.getPillarWithDetails(id, session.user.id);
+    const pillar = await pillarsServiceV2.getPillarWithDetails(id, session.user.id);
     return NextResponse.json({ data: pillar });
   } catch (error) {
     console.error('Error fetching pillar:', error);
@@ -67,7 +68,7 @@ export async function PATCH(
     const validatedData = updatePillarSchema.parse(body);
 
     const { id } = await params;
-    const pillar = await pillarsService.updatePillar(id, validatedData, session.user.id);
+    const pillar = await pillarsServiceV2.updatePillar(id, validatedData, session.user.id);
     return NextResponse.json({ data: pillar });
   } catch (error) {
     if (error instanceof z.ZodError) {
@@ -103,7 +104,7 @@ export async function DELETE(
     }
 
     const { id } = await params;
-    await pillarsService.deletePillar(id, session.user.id);
+    await pillarsServiceV2.deletePillar(id, session.user.id);
     return NextResponse.json({ success: true });
   } catch (error) {
     console.error('Error deleting pillar:', error);

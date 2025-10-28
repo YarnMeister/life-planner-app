@@ -145,7 +145,7 @@ export function TasksTable() {
   } = useLifeOS();
 
   const [searchQuery, setSearchQuery] = useState('');
-  const [statusFilter, setStatusFilter] = useState<'all' | 'open' | 'done'>('all');
+  const [statusFilter, setStatusFilter] = useState<'all' | 'todo' | 'doing' | 'done' | 'blocked' | 'archived'>('all');
 
   const sensors = useSensors(
     useSensor(PointerSensor),
@@ -173,7 +173,7 @@ export function TasksTable() {
     }
 
     // Sort by rank
-    return result.sort((a, b) => a.rank - b.rank);
+    return result.sort((a, b) => (a.rank || 0) - (b.rank || 0));
   }, [tasks, selectedThemeIds, statusFilter, searchQuery]);
 
   const handleDragEnd = async (event: DragEndEvent) => {
@@ -249,13 +249,16 @@ export function TasksTable() {
         />
         <Select
           value={statusFilter}
-          onChange={(value) => setStatusFilter(value as 'all' | 'open' | 'done')}
+          onChange={(value) => setStatusFilter(value as 'all' | 'todo' | 'doing' | 'done' | 'blocked' | 'archived')}
           data={[
             { value: 'all', label: 'All' },
-            { value: 'open', label: 'Open' },
+            { value: 'todo', label: 'To Do' },
+            { value: 'doing', label: 'Doing' },
             { value: 'done', label: 'Done' },
+            { value: 'blocked', label: 'Blocked' },
+            { value: 'archived', label: 'Archived' },
           ]}
-          style={{ width: 120 }}
+          style={{ width: 140 }}
         />
       </Group>
 
