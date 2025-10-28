@@ -3,9 +3,9 @@ import { Theme, ThemesDoc, TasksDoc } from '@/types/planning.types';
 import {
   findItemIndex,
   createAddItemPatch,
+  createUpdateItemPatch,
   createRemoveItemPatch
 } from '@/lib/utils/json-patch.utils';
-import { Operation } from 'fast-json-patch';
 import { v4 as uuidv4 } from 'uuid';
 import { pillarsServiceV2 } from './pillars.service.v2';
 
@@ -173,13 +173,8 @@ export class ThemesServiceV2 {
         updates.lastReflectionNote = input.lastReflectionNote;
       }
 
-      // Build patch operations - use 'add' for previousRating if it doesn't exist
-      const patch: Operation[] = Object.entries(updates).map(([key, value]) => ({
-        op: (key === 'previousRating' && !('previousRating' in theme)) ? 'add' : 'replace',
-        path: `/${index}/${key}`,
-        value,
-      } as Operation));
-
+      // Pass existing theme to handle optional fields (e.g., previousRating, lastReflectionNote)
+      const patch = createUpdateItemPatch(index, updates, theme);
       await planningRepository.patchDoc<ThemesDoc>(
         userId,
         'themes',

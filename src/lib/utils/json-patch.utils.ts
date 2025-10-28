@@ -19,13 +19,16 @@ export function createAddItemPatch(item: unknown): Operation[] {
 
 /**
  * Create patch to update specific fields of an item at given index
+ * Automatically uses 'add' for fields that don't exist, 'replace' for fields that do
  */
 export function createUpdateItemPatch(
   index: number,
-  updates: Record<string, unknown>
+  updates: Record<string, unknown>,
+  existingItem?: unknown
 ): Operation[] {
+  const existing = existingItem as Record<string, unknown> | undefined;
   return Object.entries(updates).map(([key, value]) => ({
-    op: 'replace',
+    op: existing && !(key in existing) ? 'add' : 'replace',
     path: `/${index}/${key}`,
     value,
   }));

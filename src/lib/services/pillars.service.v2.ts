@@ -134,7 +134,8 @@ export class PillarsServiceV2 {
       if (input.domain !== undefined) updates.domain = input.domain;
       if (input.rating !== undefined) updates.rating = input.rating;
 
-      const patch = createUpdateItemPatch(index, updates);
+      // Pass existing pillar to handle optional fields (e.g., weight)
+      const patch = createUpdateItemPatch(index, updates, pillar);
       await planningRepository.patchDoc<PillarsDoc>(
         userId,
         'pillars',

@@ -255,7 +255,8 @@ export class TasksServiceV2 {
       if (input.recurrenceFrequency !== undefined) updates.recurrenceFrequency = input.recurrenceFrequency;
       if (input.recurrenceInterval !== undefined) updates.recurrenceInterval = input.recurrenceInterval;
 
-      const patch = createUpdateItemPatch(index, updates);
+      // Pass existing task to handle optional fields
+      const patch = createUpdateItemPatch(index, updates, task);
       await planningRepository.patchDoc<TasksDoc>(
         userId,
         'tasks',
