@@ -83,17 +83,16 @@ export function ReflectModal({ opened, onClose, onComplete }: ReflectModalProps)
   const handleComplete = async () => {
     setIsSaving(true);
     try {
-      // Save all theme ratings
-      const updates = Array.from(themeRatings.values()).map((rating) => {
+      // Save all theme ratings sequentially to avoid version conflicts
+      // (each update increments the version, so parallel updates would conflict)
+      for (const rating of themeRatings.values()) {
         const theme = themes.find((t) => t.id === rating.themeId);
-        return updateTheme(rating.themeId, {
+        await updateTheme(rating.themeId, {
           rating: rating.rating,
           previousRating: theme?.rating,
           lastReflectionNote: rating.note,
         });
-      });
-
-      await Promise.all(updates);
+      }
 
       // Save timestamp to localStorage
       const reflectionData = {
