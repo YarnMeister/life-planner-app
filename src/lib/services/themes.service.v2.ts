@@ -96,26 +96,31 @@ export class ThemesServiceV2 {
    * Create a new theme
    */
   async createTheme(input: CreateThemeInput, userId: string): Promise<Theme> {
-    return this.withRetry(async () => {
-      // Verify pillar exists
-      await pillarsServiceV2.getPillar(input.pillarId, userId);
+    // Verify pillar exists
+    await pillarsServiceV2.getPillar(input.pillarId, userId);
 
+    // Generate UUID outside retry to ensure idempotency
+    const now = new Date().toISOString();
+    const newTheme: Theme = this.removeUndefined({
+      id: uuidv4(),
+      pillarId: input.pillarId,
+      name: input.name.trim(),
+      rating: input.rating,
+      lastReflectionNote: input.lastReflectionNote,
+      order: 0, // Will be set correctly in retry closure
+      createdAt: now,
+      updatedAt: now,
+    } as Theme);
+
+    // Retry only the theme patch operation
+    await this.withRetry(async () => {
       const doc = await planningRepository.getDoc<ThemesDoc>(userId, 'themes');
       if (!doc) {
         throw new Error('Themes document not initialized');
       }
 
-      const now = new Date().toISOString();
-      const newTheme: Theme = this.removeUndefined({
-        id: uuidv4(),
-        pillarId: input.pillarId,
-        name: input.name.trim(),
-        rating: input.rating,
-        lastReflectionNote: input.lastReflectionNote,
-        order: doc.data.length,
-        createdAt: now,
-        updatedAt: now,
-      } as Theme);
+      // Update order based on current doc length (in case of retry)
+      newTheme.order = doc.data.length;
 
       // Use JSON Patch to add
       const patch = createAddItemPatch(newTheme);
@@ -125,12 +130,12 @@ export class ThemesServiceV2 {
         patch,
         doc.version
       );
-
-      // Recalculate pillar average
-      await pillarsServiceV2.recalculateAverage(input.pillarId, userId);
-
-      return newTheme;
     });
+
+    // Recalculate pillar average outside retry (has its own retry logic)
+    await pillarsServiceV2.recalculateAverage(input.pillarId, userId);
+
+    return newTheme;
   }
 
   /**
@@ -141,7 +146,11 @@ export class ThemesServiceV2 {
     input: UpdateThemeInput,
     userId: string
   ): Promise<Theme> {
-    return this.withRetry(async () => {
+    let pillarId: string | undefined;
+    let ratingChanged = false;
+
+    // Retry only the theme patch operation
+    const updatedTheme = await this.withRetry(async () => {
       const doc = await planningRepository.getDoc<ThemesDoc>(userId, 'themes');
       if (!doc) {
         throw new Error('Themes document not found');
@@ -157,6 +166,8 @@ export class ThemesServiceV2 {
       if (input.rating !== undefined) {
         updates.previousRating = theme.rating; // Save old rating
         updates.rating = input.rating;
+        ratingChanged = true;
+        pillarId = theme.pillarId;
       }
       if (input.lastReflectionNote !== undefined) {
         updates.lastReflectionNote = input.lastReflectionNote;
@@ -170,30 +181,33 @@ export class ThemesServiceV2 {
         doc.version
       );
 
-      // Recalculate pillar average if rating changed
-      if (input.rating !== undefined) {
-        await pillarsServiceV2.recalculateAverage(theme.pillarId, userId);
-      }
-
       return { ...theme, ...updates } as Theme;
     });
+
+    // Recalculate pillar average outside retry (has its own retry logic)
+    if (ratingChanged && pillarId) {
+      await pillarsServiceV2.recalculateAverage(pillarId, userId);
+    }
+
+    return updatedTheme;
   }
 
   /**
    * Delete a theme (with dependency check)
    */
   async deleteTheme(id: string, userId: string): Promise<void> {
-    return this.withRetry(async () => {
-      // Get theme first to know which pillar to recalculate
-      const theme = await this.getTheme(id, userId);
+    // Get theme first to know which pillar to recalculate (before deletion)
+    const theme = await this.getTheme(id, userId);
 
-      // Check for dependent tasks
-      const tasksDoc = await planningRepository.getDoc<TasksDoc>(userId, 'tasks');
-      const hasTasks = tasksDoc?.data.some((t) => t.themeId === id);
-      if (hasTasks) {
-        throw new Error('Cannot delete theme with existing tasks');
-      }
+    // Check for dependent tasks
+    const tasksDoc = await planningRepository.getDoc<TasksDoc>(userId, 'tasks');
+    const hasTasks = tasksDoc?.data.some((t) => t.themeId === id);
+    if (hasTasks) {
+      throw new Error('Cannot delete theme with existing tasks');
+    }
 
+    // Retry only the theme deletion patch
+    await this.withRetry(async () => {
       const doc = await planningRepository.getDoc<ThemesDoc>(userId, 'themes');
       if (!doc) {
         throw new Error('Themes document not found');
@@ -207,10 +221,10 @@ export class ThemesServiceV2 {
         patch,
         doc.version
       );
-
-      // Recalculate pillar average
-      await pillarsServiceV2.recalculateAverage(theme.pillarId, userId);
     });
+
+    // Recalculate pillar average outside retry (has its own retry logic)
+    await pillarsServiceV2.recalculateAverage(theme.pillarId, userId);
   }
 
   /**

@@ -73,23 +73,28 @@ export class PillarsServiceV2 {
    * Create a new pillar
    */
   async createPillar(input: CreatePillarInput, userId: string): Promise<Pillar> {
-    return this.withRetry(async () => {
+    // Generate UUID outside retry to ensure idempotency
+    const now = new Date().toISOString();
+    const newPillar: Pillar = {
+      id: uuidv4(),
+      name: input.name.trim(),
+      color: input.color.trim(),
+      domain: input.domain,
+      rating: 0,
+      order: 0, // Will be set correctly in retry closure
+      createdAt: now,
+      updatedAt: now,
+    };
+
+    // Retry only the pillar patch operation
+    await this.withRetry(async () => {
       const doc = await planningRepository.getDoc<PillarsDoc>(userId, 'pillars');
       if (!doc) {
         throw new Error('Pillars document not initialized');
       }
 
-      const now = new Date().toISOString();
-      const newPillar: Pillar = {
-        id: uuidv4(),
-        name: input.name.trim(),
-        color: input.color.trim(),
-        domain: input.domain,
-        rating: 0,
-        order: doc.data.length,
-        createdAt: now,
-        updatedAt: now,
-      };
+      // Update order based on current doc length (in case of retry)
+      newPillar.order = doc.data.length;
 
       // Use JSON Patch to add
       const patch = createAddItemPatch(newPillar);
@@ -99,9 +104,9 @@ export class PillarsServiceV2 {
         patch,
         doc.version
       );
-
-      return newPillar;
     });
+
+    return newPillar;
   }
 
   /**

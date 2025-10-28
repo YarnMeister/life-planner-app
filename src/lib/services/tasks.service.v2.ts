@@ -147,41 +147,49 @@ export class TasksServiceV2 {
    * Create a new task
    */
   async createTask(input: CreateTaskInput, userId: string): Promise<Task> {
-    return this.withRetry(async () => {
-      // Verify theme exists and get pillarId for denormalization
-      const theme = await themesServiceV2.getTheme(input.themeId, userId);
+    // Verify theme exists and get pillarId for denormalization
+    const theme = await themesServiceV2.getTheme(input.themeId, userId);
 
+    // Generate UUID outside retry to ensure idempotency
+    const now = new Date().toISOString();
+    const newTask: Task = this.removeUndefined({
+      id: uuidv4(),
+      themeId: input.themeId,
+      pillarId: theme.pillarId, // Denormalize for fast filtering
+      title: input.title.trim(),
+      description: input.description,
+      notes: input.notes,
+      status: input.status ?? 'todo',
+      taskType: input.taskType ?? 'adhoc',
+      priority: input.priority,
+      impact: input.impact,
+      timeEstimate: input.timeEstimate,
+      effort: input.effort,
+      tags: input.tags,
+      ratingImpact: input.ratingImpact,
+      rank: input.rank ?? 0, // Will be set correctly in retry closure
+      order: 0, // Will be set correctly in retry closure
+      dueDate: input.dueDate,
+      dueAt: input.dueAt,
+      recurrence: input.recurrence,
+      recurrenceFrequency: input.recurrenceFrequency,
+      recurrenceInterval: input.recurrenceInterval,
+      createdAt: now,
+      updatedAt: now,
+    } as Task);
+
+    // Retry only the task patch operation
+    await this.withRetry(async () => {
       const doc = await planningRepository.getDoc<TasksDoc>(userId, 'tasks');
       if (!doc) {
         throw new Error('Tasks document not initialized');
       }
 
-      const now = new Date().toISOString();
-      const newTask: Task = this.removeUndefined({
-        id: uuidv4(),
-        themeId: input.themeId,
-        pillarId: theme.pillarId, // Denormalize for fast filtering
-        title: input.title.trim(),
-        description: input.description,
-        notes: input.notes,
-        status: input.status ?? 'todo',
-        taskType: input.taskType ?? 'adhoc',
-        priority: input.priority,
-        impact: input.impact,
-        timeEstimate: input.timeEstimate,
-        effort: input.effort,
-        tags: input.tags,
-        ratingImpact: input.ratingImpact,
-        rank: input.rank ?? doc.data.length,
-        order: doc.data.length,
-        dueDate: input.dueDate,
-        dueAt: input.dueAt,
-        recurrence: input.recurrence,
-        recurrenceFrequency: input.recurrenceFrequency,
-        recurrenceInterval: input.recurrenceInterval,
-        createdAt: now,
-        updatedAt: now,
-      } as Task);
+      // Update order/rank based on current doc length (in case of retry)
+      if (input.rank === undefined) {
+        newTask.rank = doc.data.length;
+      }
+      newTask.order = doc.data.length;
 
       // Use JSON Patch to add
       const patch = createAddItemPatch(newTask);
@@ -191,9 +199,9 @@ export class TasksServiceV2 {
         patch,
         doc.version
       );
-
-      return newTask;
     });
+
+    return newTask;
   }
 
   /**
