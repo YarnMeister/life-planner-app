@@ -47,7 +47,8 @@ export function DoTab({ onOpenCapture }: DoTabProps) {
       await Promise.all([loadPillars(), loadThemes(), loadTasks()]);
     };
     loadData();
-  }, [loadPillars, loadThemes, loadTasks]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // Only run once on mount
 
   // Calculate task counts by domain
   const taskCounts = useMemo(
