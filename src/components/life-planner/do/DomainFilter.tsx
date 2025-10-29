@@ -1,22 +1,19 @@
 'use client';
 
 import { SegmentedControl } from '@mantine/core';
+import type { Domain } from '@/types';
 
 interface DomainFilterProps {
-  value: 'all' | 'work' | 'personal';
-  onChange: (value: 'all' | 'work' | 'personal') => void;
-  taskCounts?: {
-    all: number;
-    work: number;
-    personal: number;
-  };
+  value: Domain;
+  onChange: (value: Domain) => void;
+  taskCounts?: Record<Domain, number>;
 }
 
 export function DomainFilter({ value, onChange, taskCounts }: DomainFilterProps) {
   return (
     <SegmentedControl
       value={value}
-      onChange={(val) => onChange(val as 'all' | 'work' | 'personal')}
+      onChange={(val) => onChange(val as Domain)}
       data={[
         {
           label: taskCounts ? `All (${taskCounts.all})` : 'All',

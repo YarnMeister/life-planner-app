@@ -1,4 +1,5 @@
 export type PillarDomain = 'work' | 'personal';
+export type Domain = 'all' | PillarDomain; // For filtering: all, work, or personal
 export type TaskStatus = 'todo' | 'doing' | 'done' | 'blocked' | 'archived';
 export type TaskType = 'adhoc' | 'recurring';
 export type Impact = 'H' | 'M' | 'L';

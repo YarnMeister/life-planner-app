@@ -14,9 +14,11 @@ import {
 import { useMediaQuery } from '@mantine/hooks';
 import { IconPlus, IconCheckbox, IconCircleCheck, IconFilter } from '@tabler/icons-react';
 import { useLifeOS } from '@/hooks/useLifeOS';
+import type { Domain } from '@/types';
 import { DomainFilter } from './do/DomainFilter';
 import { MobileTaskList } from './do/MobileTaskList';
 import { TaskListView } from './do/TaskListView';
+import { computeTaskCounts } from './do/taskUtils';
 
 interface DoTabProps {
   onOpenCapture: () => void;
@@ -24,7 +26,7 @@ interface DoTabProps {
 
 export function DoTab({ onOpenCapture }: DoTabProps) {
   const isMobile = useMediaQuery('(max-width: 768px)');
-  const [domainFilter, setDomainFilter] = useState<'all' | 'work' | 'personal'>('all');
+  const [domainFilter, setDomainFilter] = useState<Domain>('all');
   const [completingTaskIds, setCompletingTaskIds] = useState<Set<string>>(new Set());
 
   const {
@@ -48,25 +50,22 @@ export function DoTab({ onOpenCapture }: DoTabProps) {
   }, [loadPillars, loadThemes, loadTasks]);
 
   // Calculate task counts by domain
-  const taskCounts = useMemo(() => {
-    const counts = { all: 0, work: 0, personal: 0 };
-    tasks.forEach((task) => {
-      if (task.status === 'done' || task.status === 'archived') return;
-      counts.all++;
-      const pillar = pillars.find((p) => p.id === task.pillarId);
-      if (pillar?.domain === 'work') counts.work++;
-      if (pillar?.domain === 'personal') counts.personal++;
-    });
-    return counts;
-  }, [tasks, pillars]);
+  const taskCounts = useMemo(
+    () => computeTaskCounts(tasks, pillars),
+    [tasks, pillars]
+  );
 
   // Prioritize tasks using the algorithm
   const prioritizedTasks = useMemo(() => {
+    // Create lookup maps once before filtering/sorting (micro-optimization)
+    const pillarDomainMap = new Map(pillars.map((p) => [p.id, p.domain]));
+    const themeRatingMap = new Map(themes.map((t) => [t.id, t.rating]));
+
     // 1. Filter by domain
     let filtered = tasks.filter((task) => {
       if (domainFilter === 'all') return true;
-      const pillar = pillars.find((p) => p.id === task.pillarId);
-      return pillar?.domain === domainFilter;
+      const domain = task.pillarId ? pillarDomainMap.get(task.pillarId) : undefined;
+      return domain === domainFilter;
     });
 
     // 2. Filter out completed/archived tasks
@@ -76,11 +75,9 @@ export function DoTab({ onOpenCapture }: DoTabProps) {
 
     // 3. Sort by prioritization algorithm
     return filtered.sort((a, b) => {
-      // Get theme ratings
-      const themeA = themes.find((t) => t.id === a.themeId);
-      const themeB = themes.find((t) => t.id === b.themeId);
-      const ratingA = themeA?.rating ?? 100;
-      const ratingB = themeB?.rating ?? 100;
+      // Get theme ratings from lookup map
+      const ratingA = themeRatingMap.get(a.themeId) ?? 100;
+      const ratingB = themeRatingMap.get(b.themeId) ?? 100;
 
       // 1. Sort by theme rating (ascending - lowest first)
       if (ratingA !== ratingB) {
