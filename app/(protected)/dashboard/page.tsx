@@ -1,16 +1,38 @@
 'use client';
 
-import { useState } from 'react';
-import { AppShell, Tabs } from '@mantine/core';
+import { useState, useEffect } from 'react';
+import { AppShell, Tabs, Loader, Center } from '@mantine/core';
 import { IconBulb, IconRun, IconHeart } from '@tabler/icons-react';
 import { PlanTab } from '@/components/life-planner/PlanTab';
 import { DoTab } from '@/components/life-planner/DoTab';
 import { ReflectTab } from '@/components/life-planner/ReflectTab';
 import { CaptureTaskForm } from '@/components/life-planner/CaptureTaskForm';
+import { useLifeOS } from '@/hooks/useLifeOS';
 
 export default function DashboardPage() {
   const [captureFormOpened, setCaptureFormOpened] = useState(false);
   const [activeTab, setActiveTab] = useState<string | null>('plan');
+  const { loadPillars, loadThemes, loadTasks, isLoading } = useLifeOS();
+
+  // Load all data once at dashboard level
+  useEffect(() => {
+    const loadData = async () => {
+      await Promise.all([loadPillars(), loadThemes(), loadTasks()]);
+    };
+    loadData();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // Only run once on mount
+
+  // Show loading state while data is being fetched
+  if (isLoading) {
+    return (
+      <AppShell padding="md" style={{ minHeight: '100vh' }}>
+        <Center style={{ height: '100vh' }}>
+          <Loader size="lg" />
+        </Center>
+      </AppShell>
+    );
+  }
 
   return (
     <AppShell padding="md" style={{ minHeight: '100vh' }}>

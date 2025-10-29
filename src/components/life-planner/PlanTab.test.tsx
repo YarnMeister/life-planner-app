@@ -39,59 +39,11 @@ vi.mock('./plan/AllTasksGrid', () => ({
 }));
 
 describe('PlanTab', () => {
-  const mockLoadPillars = vi.fn();
-  const mockLoadThemes = vi.fn();
-  const mockLoadTasks = vi.fn();
-
-  const mockUseLifeOS = {
-    loadPillars: mockLoadPillars,
-    loadThemes: mockLoadThemes,
-    loadTasks: mockLoadTasks,
-  };
+  const mockUseLifeOS = {};
 
   beforeEach(() => {
     vi.clearAllMocks();
-    mockLoadPillars.mockResolvedValue(undefined);
-    mockLoadThemes.mockResolvedValue(undefined);
-    mockLoadTasks.mockResolvedValue(undefined);
     vi.mocked(useLifeOS).mockReturnValue(mockUseLifeOS as any);
-  });
-
-  describe('Data Loading', () => {
-    it('loads pillars, themes, and tasks on mount', async () => {
-      render(<PlanTab />);
-      
-      await waitFor(() => {
-        expect(mockLoadPillars).toHaveBeenCalledTimes(1);
-        expect(mockLoadThemes).toHaveBeenCalledTimes(1);
-        expect(mockLoadTasks).toHaveBeenCalledTimes(1);
-      });
-    });
-
-    it('loads data only once on mount', async () => {
-      const { rerender } = render(<PlanTab />);
-      
-      await waitFor(() => {
-        expect(mockLoadPillars).toHaveBeenCalledTimes(1);
-      });
-      
-      // Rerender should not trigger another load
-      rerender(<PlanTab />);
-      
-      await waitFor(() => {
-        expect(mockLoadPillars).toHaveBeenCalledTimes(1);
-      });
-    });
-
-    it('loads all data in parallel', async () => {
-      render(<PlanTab />);
-      
-      await waitFor(() => {
-        expect(mockLoadPillars).toHaveBeenCalled();
-        expect(mockLoadThemes).toHaveBeenCalled();
-        expect(mockLoadTasks).toHaveBeenCalled();
-      });
-    });
   });
 
   describe('View Mode Toggle', () => {

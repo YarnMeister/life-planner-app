@@ -35,9 +35,6 @@ vi.mock('./do/TaskListView', () => ({
 }));
 
 describe('DoTab', () => {
-  const mockLoadPillars = vi.fn();
-  const mockLoadThemes = vi.fn();
-  const mockLoadTasks = vi.fn();
   const mockUpdateTask = vi.fn();
   const mockSelectTask = vi.fn();
   const mockOnOpenCapture = vi.fn();
@@ -117,46 +114,15 @@ describe('DoTab', () => {
     themes: mockThemes,
     updateTask: mockUpdateTask,
     selectTask: mockSelectTask,
-    loadPillars: mockLoadPillars,
-    loadThemes: mockLoadThemes,
-    loadTasks: mockLoadTasks,
-    isLoading: false,
   };
 
   beforeEach(() => {
     vi.clearAllMocks();
-    mockLoadPillars.mockResolvedValue(undefined);
-    mockLoadThemes.mockResolvedValue(undefined);
-    mockLoadTasks.mockResolvedValue(undefined);
     mockUpdateTask.mockResolvedValue(undefined);
     vi.mocked(useLifeOS).mockReturnValue(mockUseLifeOS as any);
   });
 
-  describe('Data Loading', () => {
-    it('loads pillars, themes, and tasks on mount', async () => {
-      render(<DoTab onOpenCapture={mockOnOpenCapture} />);
 
-      await waitFor(() => {
-        expect(mockLoadPillars).toHaveBeenCalledTimes(1);
-        expect(mockLoadThemes).toHaveBeenCalledTimes(1);
-        expect(mockLoadTasks).toHaveBeenCalledTimes(1);
-      });
-    });
-
-    it('shows loading state initially', () => {
-      vi.mocked(useLifeOS).mockReturnValue({
-        ...mockUseLifeOS,
-        isLoading: true,
-      } as any);
-
-      render(<DoTab onOpenCapture={mockOnOpenCapture} />);
-
-      // Mantine Loader doesn't have progressbar role, check for the loader class
-      expect(screen.getByText((content, element) => {
-        return element?.className?.includes('mantine-Loader') || false;
-      })).toBeInTheDocument();
-    });
-  });
 
   describe('Empty States', () => {
     it('shows empty state when no tasks exist', () => {

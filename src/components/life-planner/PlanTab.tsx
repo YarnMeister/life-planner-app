@@ -1,10 +1,9 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { Stack, Group, SegmentedControl, Box, Loader, Center } from '@mantine/core';
+import { useState } from 'react';
+import { Stack, Group, SegmentedControl, Box } from '@mantine/core';
 import { useMediaQuery } from '@mantine/hooks';
 import { IconLayoutList, IconLayoutGrid } from '@tabler/icons-react';
-import { useLifeOS } from '@/hooks/useLifeOS';
 import { PillarsColumn } from './plan/PillarsColumn';
 import { ThemesColumn } from './plan/ThemesColumn';
 import { TasksTable } from './plan/TasksTable';
@@ -17,29 +16,6 @@ type ViewMode = 'hierarchy' | 'grid';
 export function PlanTab() {
   const [viewMode, setViewMode] = useState<ViewMode>('hierarchy');
   const isMobile = useMediaQuery('(max-width: 768px)');
-  const { loadPillars, loadThemes, loadTasks, isLoading } = useLifeOS();
-
-  // Load data on mount
-  useEffect(() => {
-    const loadData = async () => {
-      await Promise.all([
-        loadPillars(),
-        loadThemes(),
-        loadTasks(),
-      ]);
-    };
-    loadData();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []); // Only run once on mount
-
-  // Show loading state
-  if (isLoading) {
-    return (
-      <Center style={{ height: '100%' }}>
-        <Loader size="lg" />
-      </Center>
-    );
-  }
 
   // Mobile view - always show accordion
   if (isMobile) {

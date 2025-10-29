@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Stack, Group, Box, Button, Text, Loader, Center } from '@mantine/core';
+import { Stack, Group, Box, Button, Text } from '@mantine/core';
 import { useMediaQuery } from '@mantine/hooks';
 import { IconSparkles } from '@tabler/icons-react';
 import { useLifeOS } from '@/hooks/useLifeOS';
@@ -13,16 +13,7 @@ export function ReflectTab() {
   const [modalOpened, setModalOpened] = useState(false);
   const [lastReflection, setLastReflection] = useState<string | null>(null);
   const isMobile = useMediaQuery('(max-width: 768px)');
-  const { loadPillars, loadThemes, isLoading } = useLifeOS();
-
-  // Load data on mount
-  useEffect(() => {
-    const loadData = async () => {
-      await Promise.all([loadPillars(), loadThemes()]);
-    };
-    loadData();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  const { loadPillars, loadThemes } = useLifeOS();
 
   // Load last reflection timestamp
   useEffect(() => {
@@ -65,15 +56,6 @@ export function ReflectTab() {
       }
     }
   };
-
-  // Show loading state
-  if (isLoading) {
-    return (
-      <Center style={{ height: '100%' }}>
-        <Loader size="lg" />
-      </Center>
-    );
-  }
 
   // Mobile view - simplified for now
   if (isMobile) {

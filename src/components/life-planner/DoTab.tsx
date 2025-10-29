@@ -1,14 +1,12 @@
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useMemo } from 'react';
 import {
   Stack,
   Group,
   Text,
   Button,
   ActionIcon,
-  Center,
-  Loader,
   Box,
 } from '@mantine/core';
 import { useMediaQuery } from '@mantine/hooks';
@@ -35,20 +33,7 @@ export function DoTab({ onOpenCapture }: DoTabProps) {
     themes,
     updateTask,
     selectTask,
-    loadPillars,
-    loadThemes,
-    loadTasks,
-    isLoading,
   } = useLifeOS();
-
-  // Load data on mount
-  useEffect(() => {
-    const loadData = async () => {
-      await Promise.all([loadPillars(), loadThemes(), loadTasks()]);
-    };
-    loadData();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []); // Only run once on mount
 
   // Calculate task counts by domain
   const taskCounts = useMemo(
@@ -130,15 +115,6 @@ export function DoTab({ onOpenCapture }: DoTabProps) {
       });
     }
   };
-
-  // Loading state
-  if (isLoading) {
-    return (
-      <Center style={{ height: '100%' }}>
-        <Loader size="lg" />
-      </Center>
-    );
-  }
 
   // Empty state - no tasks at all (never created any)
   if (tasks.length === 0) {
