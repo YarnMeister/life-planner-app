@@ -16,7 +16,7 @@ import type { Domain } from '@/types';
 import { DomainFilter } from './do/DomainFilter';
 import { MobileTaskList } from './do/MobileTaskList';
 import { TaskListView } from './do/TaskListView';
-import { computeTaskCounts } from './do/taskUtils';
+import { computeTaskCounts, prioritizeTasks } from './do/taskUtils';
 
 interface DoTabProps {
   onOpenCapture: () => void;
@@ -42,48 +42,10 @@ export function DoTab({ onOpenCapture }: DoTabProps) {
   );
 
   // Prioritize tasks using the algorithm
-  const prioritizedTasks = useMemo(() => {
-    // Create lookup maps once before filtering/sorting (micro-optimization)
-    const pillarDomainMap = new Map(pillars.map((p) => [p.id, p.domain]));
-    const themeRatingMap = new Map(themes.map((t) => [t.id, t.rating]));
-
-    // 1. Filter by domain
-    let filtered = tasks.filter((task) => {
-      if (domainFilter === 'all') return true;
-      const domain = task.pillarId ? pillarDomainMap.get(task.pillarId) : undefined;
-      return domain === domainFilter;
-    });
-
-    // 2. Filter out completed/archived tasks
-    filtered = filtered.filter(
-      (task) => task.status !== 'done' && task.status !== 'archived'
-    );
-
-    // 3. Sort by prioritization algorithm
-    return filtered.sort((a, b) => {
-      // Get theme ratings from lookup map
-      const ratingA = themeRatingMap.get(a.themeId) ?? 100;
-      const ratingB = themeRatingMap.get(b.themeId) ?? 100;
-
-      // 1. Sort by theme rating (ascending - lowest first)
-      if (ratingA !== ratingB) {
-        return ratingA - ratingB;
-      }
-
-      // 2. Then by rank (ascending)
-      const rankA = a.rank ?? 999;
-      const rankB = b.rank ?? 999;
-      if (rankA !== rankB) {
-        return rankA - rankB;
-      }
-
-      // 3. Then by impact (H > M > L)
-      const impactOrder = { H: 1, M: 2, L: 3 };
-      const impactA = impactOrder[a.impact ?? 'L'];
-      const impactB = impactOrder[b.impact ?? 'L'];
-      return impactA - impactB;
-    });
-  }, [tasks, themes, pillars, domainFilter]);
+  const prioritizedTasks = useMemo(
+    () => prioritizeTasks(tasks, themes, pillars, domainFilter),
+    [tasks, themes, pillars, domainFilter]
+  );
 
   // Handle task completion with animation
   const handleTaskComplete = async (taskId: string) => {

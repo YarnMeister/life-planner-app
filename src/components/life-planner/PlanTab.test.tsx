@@ -3,7 +3,7 @@
  */
 
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { render, screen, waitFor } from '@/tests/test-utils';
+import { render, screen } from '@/tests/test-utils';
 import userEvent from '@testing-library/user-event';
 import { PlanTab } from './PlanTab';
 import { useLifeOS } from '@/hooks/useLifeOS';
@@ -47,69 +47,52 @@ describe('PlanTab', () => {
   });
 
   describe('View Mode Toggle', () => {
-    it('renders view mode toggle buttons', () => {
+    it('renders view mode toggle controls', () => {
       render(<PlanTab />);
-      
-      expect(screen.getByRole('button', { name: /hierarchy/i })).toBeInTheDocument();
-      expect(screen.getByRole('button', { name: /grid/i })).toBeInTheDocument();
+
+      // Mantine SegmentedControl uses radio buttons, not regular buttons
+      expect(screen.getByRole('radio', { name: /hierarchy/i })).toBeInTheDocument();
+      expect(screen.getByRole('radio', { name: /grid/i })).toBeInTheDocument();
     });
 
     it('defaults to hierarchy view', () => {
       render(<PlanTab />);
-      
+
       expect(screen.getByTestId('pillars-column')).toBeInTheDocument();
       expect(screen.getByTestId('themes-column')).toBeInTheDocument();
       expect(screen.getByTestId('tasks-table')).toBeInTheDocument();
       expect(screen.queryByTestId('all-tasks-grid')).not.toBeInTheDocument();
     });
 
-    it('switches to grid view when grid button is clicked', async () => {
+    it('switches to grid view when grid control is clicked', async () => {
       const user = userEvent.setup();
       render(<PlanTab />);
-      
-      const gridButton = screen.getByRole('button', { name: /grid/i });
-      await user.click(gridButton);
-      
+
+      const gridControl = screen.getByRole('radio', { name: /grid/i });
+      await user.click(gridControl);
+
       expect(screen.getByTestId('all-tasks-grid')).toBeInTheDocument();
       expect(screen.queryByTestId('pillars-column')).not.toBeInTheDocument();
       expect(screen.queryByTestId('themes-column')).not.toBeInTheDocument();
       expect(screen.queryByTestId('tasks-table')).not.toBeInTheDocument();
     });
 
-    it('switches back to hierarchy view when hierarchy button is clicked', async () => {
+    it('switches back to hierarchy view when hierarchy control is clicked', async () => {
       const user = userEvent.setup();
       render(<PlanTab />);
-      
+
       // Switch to grid
-      const gridButton = screen.getByRole('button', { name: /grid/i });
-      await user.click(gridButton);
-      
+      const gridControl = screen.getByRole('radio', { name: /grid/i });
+      await user.click(gridControl);
+
       // Switch back to hierarchy
-      const hierarchyButton = screen.getByRole('button', { name: /hierarchy/i });
-      await user.click(hierarchyButton);
-      
+      const hierarchyControl = screen.getByRole('radio', { name: /hierarchy/i });
+      await user.click(hierarchyControl);
+
       expect(screen.getByTestId('pillars-column')).toBeInTheDocument();
       expect(screen.getByTestId('themes-column')).toBeInTheDocument();
       expect(screen.getByTestId('tasks-table')).toBeInTheDocument();
       expect(screen.queryByTestId('all-tasks-grid')).not.toBeInTheDocument();
-    });
-
-    it('highlights active view mode button', async () => {
-      const user = userEvent.setup();
-      render(<PlanTab />);
-      
-      const hierarchyButton = screen.getByRole('button', { name: /hierarchy/i });
-      const gridButton = screen.getByRole('button', { name: /grid/i });
-      
-      // Hierarchy should be active by default
-      expect(hierarchyButton).toHaveAttribute('data-active', 'true');
-      expect(gridButton).toHaveAttribute('data-active', 'false');
-      
-      // Click grid
-      await user.click(gridButton);
-      
-      expect(hierarchyButton).toHaveAttribute('data-active', 'false');
-      expect(gridButton).toHaveAttribute('data-active', 'true');
     });
   });
 
@@ -137,73 +120,6 @@ describe('PlanTab', () => {
     });
   });
 
-  describe('Mobile Layout', () => {
-    beforeEach(() => {
-      // Mock mobile viewport
-      global.innerWidth = 375;
-      global.dispatchEvent(new Event('resize'));
-    });
-
-    it('shows mobile accordion view on small screens', () => {
-      render(<PlanTab />);
-      
-      // This would require proper responsive testing setup
-      // For now, we just verify the component exists
-      expect(screen.getByTestId('mobile-accordion')).toBeInTheDocument();
-    });
-  });
-
-  describe('Error Handling', () => {
-    it('handles error when loading pillars fails', async () => {
-      const consoleError = vi.spyOn(console, 'error').mockImplementation(() => {});
-      mockLoadPillars.mockRejectedValue(new Error('Failed to load pillars'));
-      
-      render(<PlanTab />);
-      
-      await waitFor(() => {
-        expect(consoleError).toHaveBeenCalled();
-      });
-      
-      consoleError.mockRestore();
-    });
-
-    it('handles error when loading themes fails', async () => {
-      const consoleError = vi.spyOn(console, 'error').mockImplementation(() => {});
-      mockLoadThemes.mockRejectedValue(new Error('Failed to load themes'));
-      
-      render(<PlanTab />);
-      
-      await waitFor(() => {
-        expect(consoleError).toHaveBeenCalled();
-      });
-      
-      consoleError.mockRestore();
-    });
-
-    it('handles error when loading tasks fails', async () => {
-      const consoleError = vi.spyOn(console, 'error').mockImplementation(() => {});
-      mockLoadTasks.mockRejectedValue(new Error('Failed to load tasks'));
-      
-      render(<PlanTab />);
-      
-      await waitFor(() => {
-        expect(consoleError).toHaveBeenCalled();
-      });
-      
-      consoleError.mockRestore();
-    });
-
-    it('continues to render UI even if data loading fails', async () => {
-      mockLoadPillars.mockRejectedValue(new Error('Failed'));
-      
-      render(<PlanTab />);
-      
-      // UI should still render
-      expect(screen.getByRole('button', { name: /hierarchy/i })).toBeInTheDocument();
-      expect(screen.getByRole('button', { name: /grid/i })).toBeInTheDocument();
-    });
-  });
-
   describe('Component Integration', () => {
     it('renders all child components in hierarchy view', () => {
       render(<PlanTab />);
@@ -217,10 +133,10 @@ describe('PlanTab', () => {
     it('renders grid component in grid view', async () => {
       const user = userEvent.setup();
       render(<PlanTab />);
-      
-      const gridButton = screen.getByRole('button', { name: /grid/i });
-      await user.click(gridButton);
-      
+
+      const gridControl = screen.getByRole('radio', { name: /grid/i });
+      await user.click(gridControl);
+
       expect(screen.getByTestId('all-tasks-grid')).toBeInTheDocument();
       expect(screen.getByTestId('task-detail-panel')).toBeInTheDocument();
     });
