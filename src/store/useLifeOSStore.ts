@@ -135,23 +135,19 @@ export const useLifeOSStore = create<LifeOSState>((set, get) => ({
   },
 
   deletePillar: async (id) => {
-    const previousPillars = get().pillars;
-    
     try {
       set({ isSyncing: true, error: null });
-      // Optimistic update
+
+      // API call first (no optimistic update to avoid glitchy rollback)
+      await pillarsAPI.delete(id);
+
+      // Only update UI after successful deletion
       set((state) => ({
         pillars: state.pillars.filter((p) => p.id !== id),
+        isSyncing: false,
       }));
-
-      // API call
-      await pillarsAPI.delete(id);
-      
-      set({ isSyncing: false });
     } catch (error) {
-      // Rollback
       set({
-        pillars: previousPillars,
         error: error instanceof APIError ? error.message : 'Failed to delete pillar',
         isSyncing: false,
       });

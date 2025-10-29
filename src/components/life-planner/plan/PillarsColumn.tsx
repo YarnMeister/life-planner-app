@@ -38,6 +38,8 @@ export function PillarsColumn() {
 
   const [domainFilter, setDomainFilter] = useState<'all' | 'work' | 'personal'>('all');
   const [modalOpened, setModalOpened] = useState(false);
+  const [deleteModalOpened, setDeleteModalOpened] = useState(false);
+  const [pillarToDelete, setPillarToDelete] = useState<string | null>(null);
   const [editingPillar, setEditingPillar] = useState<Pillar | null>(null);
   const [formData, setFormData] = useState<PillarFormData>({
     name: '',
@@ -80,32 +82,43 @@ export function PillarsColumn() {
     }
   };
 
-  const handleDelete = async (id: string) => {
-    if (confirm('Are you sure you want to delete this pillar?')) {
-      try {
-        await removePillar(id);
-      } catch (error) {
-        console.error('Failed to delete pillar:', error);
+  const handleOpenDelete = (id: string) => {
+    setPillarToDelete(id);
+    setDeleteModalOpened(true);
+  };
 
-        // Check if it's the "Cannot delete pillar with existing themes" error
-        const errorMessage = error instanceof Error ? error.message : String(error);
-        if (errorMessage.includes('Cannot delete pillar with existing themes')) {
-          notifications.show({
-            title: 'Cannot Delete Pillar',
-            message: 'This pillar has associated themes. Please delete or reassign all themes before deleting the pillar.',
-            color: 'yellow',
-            icon: <IconAlertTriangle size={16} />,
-            autoClose: 8000,
-          });
-        } else {
-          notifications.show({
-            title: 'Error',
-            message: 'Failed to delete pillar. Please try again.',
-            color: 'red',
-            autoClose: 5000,
-          });
-        }
+  const handleConfirmDelete = async () => {
+    if (!pillarToDelete) return;
+
+    try {
+      await removePillar(pillarToDelete);
+      setDeleteModalOpened(false);
+      setPillarToDelete(null);
+    } catch (error) {
+      console.error('Failed to delete pillar:', error);
+
+      // Check if it's the "Cannot delete pillar with existing themes" error
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      if (errorMessage.includes('Cannot delete pillar with existing themes')) {
+        notifications.show({
+          title: 'Cannot Delete Pillar',
+          message: 'This pillar has associated themes. Please delete or reassign all themes before deleting the pillar.',
+          color: 'yellow',
+          icon: <IconAlertTriangle size={16} />,
+          autoClose: 8000,
+        });
+      } else {
+        notifications.show({
+          title: 'Error',
+          message: 'Failed to delete pillar. Please try again.',
+          color: 'red',
+          autoClose: 5000,
+        });
       }
+
+      // Close modal even on error
+      setDeleteModalOpened(false);
+      setPillarToDelete(null);
     }
   };
 
@@ -179,7 +192,7 @@ export function PillarsColumn() {
                     size="sm"
                     onClick={(e) => {
                       e.stopPropagation();
-                      handleDelete(pillar.id);
+                      handleOpenDelete(pillar.id);
                     }}
                   >
                     <IconTrash size={16} />
@@ -190,6 +203,37 @@ export function PillarsColumn() {
           ))}
         </Stack>
       </Stack>
+
+      {/* Delete Confirmation Modal */}
+      <Modal
+        opened={deleteModalOpened}
+        onClose={() => {
+          setDeleteModalOpened(false);
+          setPillarToDelete(null);
+        }}
+        title="Delete Pillar"
+        centered
+      >
+        <Stack gap="md">
+          <Text>
+            Are you sure you want to delete this pillar? This action cannot be undone.
+          </Text>
+          <Group justify="flex-end" mt="md">
+            <Button
+              variant="subtle"
+              onClick={() => {
+                setDeleteModalOpened(false);
+                setPillarToDelete(null);
+              }}
+            >
+              Cancel
+            </Button>
+            <Button color="red" onClick={handleConfirmDelete}>
+              Delete
+            </Button>
+          </Group>
+        </Stack>
+      </Modal>
 
       {/* Create/Edit Modal */}
       <Modal

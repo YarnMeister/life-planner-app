@@ -38,6 +38,8 @@ export function ThemesColumn() {
   } = useLifeOS();
 
   const [modalOpened, setModalOpened] = useState(false);
+  const [deleteModalOpened, setDeleteModalOpened] = useState(false);
+  const [themeToDelete, setThemeToDelete] = useState<string | null>(null);
   const [editingTheme, setEditingTheme] = useState<Theme | null>(null);
   const [formData, setFormData] = useState<ThemeFormData>({
     name: '',
@@ -70,7 +72,7 @@ export function ThemesColumn() {
 
   const handleSubmit = async () => {
     if (!selectedPillarId) return;
-    
+
     try {
       if (editingTheme) {
         await updateTheme(editingTheme.id, formData);
@@ -86,32 +88,43 @@ export function ThemesColumn() {
     }
   };
 
-  const handleDelete = async (id: string) => {
-    if (confirm('Are you sure you want to delete this theme?')) {
-      try {
-        await removeTheme(id);
-      } catch (error) {
-        console.error('Failed to delete theme:', error);
+  const handleOpenDelete = (id: string) => {
+    setThemeToDelete(id);
+    setDeleteModalOpened(true);
+  };
 
-        // Check if it's the "Cannot delete theme with existing tasks" error
-        const errorMessage = error instanceof Error ? error.message : String(error);
-        if (errorMessage.includes('Cannot delete theme with existing tasks')) {
-          notifications.show({
-            title: 'Cannot Delete Theme',
-            message: 'This theme has associated tasks. Please delete or reassign all tasks before deleting the theme.',
-            color: 'yellow',
-            icon: <IconAlertTriangle size={16} />,
-            autoClose: 8000,
-          });
-        } else {
-          notifications.show({
-            title: 'Error',
-            message: 'Failed to delete theme. Please try again.',
-            color: 'red',
-            autoClose: 5000,
-          });
-        }
+  const handleConfirmDelete = async () => {
+    if (!themeToDelete) return;
+
+    try {
+      await removeTheme(themeToDelete);
+      setDeleteModalOpened(false);
+      setThemeToDelete(null);
+    } catch (error) {
+      console.error('Failed to delete theme:', error);
+
+      // Check if it's the "Cannot delete theme with existing tasks" error
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      if (errorMessage.includes('Cannot delete theme with existing tasks')) {
+        notifications.show({
+          title: 'Cannot Delete Theme',
+          message: 'This theme has associated tasks. Please delete or reassign all tasks before deleting the theme.',
+          color: 'yellow',
+          icon: <IconAlertTriangle size={16} />,
+          autoClose: 8000,
+        });
+      } else {
+        notifications.show({
+          title: 'Error',
+          message: 'Failed to delete theme. Please try again.',
+          color: 'red',
+          autoClose: 5000,
+        });
       }
+
+      // Close modal even on error
+      setDeleteModalOpened(false);
+      setThemeToDelete(null);
     }
   };
 
@@ -193,7 +206,7 @@ export function ThemesColumn() {
                       size="sm"
                       onClick={(e) => {
                         e.stopPropagation();
-                        handleDelete(theme.id);
+                        handleOpenDelete(theme.id);
                       }}
                     >
                       <IconTrash size={16} />
@@ -211,6 +224,37 @@ export function ThemesColumn() {
           </Text>
         )}
       </Stack>
+
+      {/* Delete Confirmation Modal */}
+      <Modal
+        opened={deleteModalOpened}
+        onClose={() => {
+          setDeleteModalOpened(false);
+          setThemeToDelete(null);
+        }}
+        title="Delete Theme"
+        centered
+      >
+        <Stack gap="md">
+          <Text>
+            Are you sure you want to delete this theme? This action cannot be undone.
+          </Text>
+          <Group justify="flex-end" mt="md">
+            <Button
+              variant="subtle"
+              onClick={() => {
+                setDeleteModalOpened(false);
+                setThemeToDelete(null);
+              }}
+            >
+              Cancel
+            </Button>
+            <Button color="red" onClick={handleConfirmDelete}>
+              Delete
+            </Button>
+          </Group>
+        </Stack>
+      </Modal>
 
       {/* Create/Edit Modal */}
       <Modal
