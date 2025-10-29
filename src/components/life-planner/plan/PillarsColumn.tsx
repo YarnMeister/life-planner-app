@@ -15,7 +15,8 @@ import {
   Select,
   Badge,
 } from '@mantine/core';
-import { IconPlus, IconEdit, IconTrash } from '@tabler/icons-react';
+import { IconPlus, IconEdit, IconTrash, IconAlertTriangle } from '@tabler/icons-react';
+import { notifications } from '@mantine/notifications';
 import { useLifeOS } from '@/hooks/useLifeOS';
 import { Pillar, PillarDomain } from '@/types';
 
@@ -80,11 +81,30 @@ export function PillarsColumn() {
   };
 
   const handleDelete = async (id: string) => {
-    if (confirm('Are you sure you want to delete this pillar? All associated themes and tasks will be deleted.')) {
+    if (confirm('Are you sure you want to delete this pillar?')) {
       try {
         await removePillar(id);
       } catch (error) {
         console.error('Failed to delete pillar:', error);
+
+        // Check if it's the "Cannot delete pillar with existing themes" error
+        const errorMessage = error instanceof Error ? error.message : String(error);
+        if (errorMessage.includes('Cannot delete pillar with existing themes')) {
+          notifications.show({
+            title: 'Cannot Delete Pillar',
+            message: 'This pillar has associated themes. Please delete or reassign all themes before deleting the pillar.',
+            color: 'yellow',
+            icon: <IconAlertTriangle size={16} />,
+            autoClose: 8000,
+          });
+        } else {
+          notifications.show({
+            title: 'Error',
+            message: 'Failed to delete pillar. Please try again.',
+            color: 'red',
+            autoClose: 5000,
+          });
+        }
       }
     }
   };

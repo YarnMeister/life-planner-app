@@ -14,7 +14,8 @@ import {
   Slider,
   Textarea,
 } from '@mantine/core';
-import { IconPlus, IconEdit, IconTrash } from '@tabler/icons-react';
+import { IconPlus, IconEdit, IconTrash, IconAlertTriangle } from '@tabler/icons-react';
+import { notifications } from '@mantine/notifications';
 import { useLifeOS } from '@/hooks/useLifeOS';
 import { Theme } from '@/types';
 
@@ -86,11 +87,30 @@ export function ThemesColumn() {
   };
 
   const handleDelete = async (id: string) => {
-    if (confirm('Are you sure you want to delete this theme? All associated tasks will be deleted.')) {
+    if (confirm('Are you sure you want to delete this theme?')) {
       try {
         await removeTheme(id);
       } catch (error) {
         console.error('Failed to delete theme:', error);
+
+        // Check if it's the "Cannot delete theme with existing tasks" error
+        const errorMessage = error instanceof Error ? error.message : String(error);
+        if (errorMessage.includes('Cannot delete theme with existing tasks')) {
+          notifications.show({
+            title: 'Cannot Delete Theme',
+            message: 'This theme has associated tasks. Please delete or reassign all tasks before deleting the theme.',
+            color: 'yellow',
+            icon: <IconAlertTriangle size={16} />,
+            autoClose: 8000,
+          });
+        } else {
+          notifications.show({
+            title: 'Error',
+            message: 'Failed to delete theme. Please try again.',
+            color: 'red',
+            autoClose: 5000,
+          });
+        }
       }
     }
   };
