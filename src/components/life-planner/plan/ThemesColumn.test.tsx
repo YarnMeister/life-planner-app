@@ -28,7 +28,7 @@ describe('ThemesColumn', () => {
     selectTheme: vi.fn(),
     addTheme: vi.fn(),
     updateTheme: vi.fn(),
-    removeTheme: vi.fn(),
+    deleteTheme: vi.fn(),
   };
 
   beforeEach(() => {
@@ -274,30 +274,30 @@ describe('ThemesColumn', () => {
 
     it('deletes theme when confirmed', async () => {
       const user = userEvent.setup();
-      mockStore.removeTheme.mockResolvedValueOnce(undefined);
-      
+      mockStore.deleteTheme.mockResolvedValueOnce(undefined);
+
       render(<ThemesColumn />);
-      
+
       const deleteButtons = screen.getAllByLabelText(/delete/i);
       await user.click(deleteButtons[0]);
-      
+
       await user.click(screen.getByRole('button', { name: /confirm/i }));
-      
+
       await waitFor(() => {
-        expect(mockStore.removeTheme).toHaveBeenCalledWith('t1');
+        expect(mockStore.deleteTheme).toHaveBeenCalledWith('t1');
       });
     });
 
     it('does not delete when cancelled', async () => {
       const user = userEvent.setup();
       render(<ThemesColumn />);
-      
+
       const deleteButtons = screen.getAllByLabelText(/delete/i);
       await user.click(deleteButtons[0]);
-      
+
       await user.click(screen.getByRole('button', { name: /cancel/i }));
-      
-      expect(mockStore.removeTheme).not.toHaveBeenCalled();
+
+      expect(mockStore.deleteTheme).not.toHaveBeenCalled();
     });
   });
 

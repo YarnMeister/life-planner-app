@@ -35,7 +35,7 @@ export function useLifeOS() {
     [store]
   );
 
-  const removePillar = useCallback(
+  const deletePillar = useCallback(
     async (id: string) => {
       try {
         await store.deletePillar(id);
@@ -72,7 +72,7 @@ export function useLifeOS() {
     [store]
   );
 
-  const removeTheme = useCallback(
+  const deleteTheme = useCallback(
     async (id: string) => {
       try {
         await store.deleteTheme(id);
@@ -181,13 +181,13 @@ export function useLifeOS() {
     // Pillar operations
     createPillar,
     updatePillar,
-    removePillar,
+    deletePillar,
     selectPillar: store.selectPillar,
 
     // Theme operations
     createTheme,
     updateTheme,
-    removeTheme,
+    deleteTheme,
     toggleThemeSelection: store.toggleThemeSelection,
     selectSingleTheme: store.selectSingleTheme,
 

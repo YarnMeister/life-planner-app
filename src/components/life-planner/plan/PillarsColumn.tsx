@@ -19,6 +19,7 @@ import { IconPlus, IconEdit, IconTrash, IconAlertTriangle } from '@tabler/icons-
 import { notifications } from '@mantine/notifications';
 import { useLifeOS } from '@/hooks/useLifeOS';
 import { Pillar, PillarDomain } from '@/types';
+import { ConfirmDeleteModal } from './ConfirmDeleteModal';
 
 interface PillarFormData {
   name: string;
@@ -33,13 +34,14 @@ export function PillarsColumn() {
     selectPillar,
     createPillar,
     updatePillar,
-    removePillar,
+    deletePillar,
   } = useLifeOS();
 
   const [domainFilter, setDomainFilter] = useState<'all' | 'work' | 'personal'>('all');
   const [modalOpened, setModalOpened] = useState(false);
   const [deleteModalOpened, setDeleteModalOpened] = useState(false);
   const [pillarToDelete, setPillarToDelete] = useState<string | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
   const [editingPillar, setEditingPillar] = useState<Pillar | null>(null);
   const [formData, setFormData] = useState<PillarFormData>({
     name: '',
@@ -90,8 +92,9 @@ export function PillarsColumn() {
   const handleConfirmDelete = async () => {
     if (!pillarToDelete) return;
 
+    setIsDeleting(true);
     try {
-      await removePillar(pillarToDelete);
+      await deletePillar(pillarToDelete);
       setDeleteModalOpened(false);
       setPillarToDelete(null);
     } catch (error) {
@@ -119,6 +122,8 @@ export function PillarsColumn() {
       // Close modal even on error
       setDeleteModalOpened(false);
       setPillarToDelete(null);
+    } finally {
+      setIsDeleting(false);
     }
   };
 
@@ -205,35 +210,17 @@ export function PillarsColumn() {
       </Stack>
 
       {/* Delete Confirmation Modal */}
-      <Modal
+      <ConfirmDeleteModal
         opened={deleteModalOpened}
         onClose={() => {
           setDeleteModalOpened(false);
           setPillarToDelete(null);
         }}
+        onConfirm={handleConfirmDelete}
         title="Delete Pillar"
-        centered
-      >
-        <Stack gap="md">
-          <Text>
-            Are you sure you want to delete this pillar? This action cannot be undone.
-          </Text>
-          <Group justify="flex-end" mt="md">
-            <Button
-              variant="subtle"
-              onClick={() => {
-                setDeleteModalOpened(false);
-                setPillarToDelete(null);
-              }}
-            >
-              Cancel
-            </Button>
-            <Button color="red" onClick={handleConfirmDelete}>
-              Delete
-            </Button>
-          </Group>
-        </Stack>
-      </Modal>
+        message="Are you sure you want to delete this pillar? This action cannot be undone."
+        isDeleting={isDeleting}
+      />
 
       {/* Create/Edit Modal */}
       <Modal

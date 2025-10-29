@@ -18,6 +18,7 @@ import { IconPlus, IconEdit, IconTrash, IconAlertTriangle } from '@tabler/icons-
 import { notifications } from '@mantine/notifications';
 import { useLifeOS } from '@/hooks/useLifeOS';
 import { Theme } from '@/types';
+import { ConfirmDeleteModal } from './ConfirmDeleteModal';
 
 interface ThemeFormData {
   name: string;
@@ -34,12 +35,13 @@ export function ThemesColumn() {
     toggleThemeSelection,
     createTheme,
     updateTheme,
-    removeTheme,
+    deleteTheme,
   } = useLifeOS();
 
   const [modalOpened, setModalOpened] = useState(false);
   const [deleteModalOpened, setDeleteModalOpened] = useState(false);
   const [themeToDelete, setThemeToDelete] = useState<string | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
   const [editingTheme, setEditingTheme] = useState<Theme | null>(null);
   const [formData, setFormData] = useState<ThemeFormData>({
     name: '',
@@ -96,8 +98,9 @@ export function ThemesColumn() {
   const handleConfirmDelete = async () => {
     if (!themeToDelete) return;
 
+    setIsDeleting(true);
     try {
-      await removeTheme(themeToDelete);
+      await deleteTheme(themeToDelete);
       setDeleteModalOpened(false);
       setThemeToDelete(null);
     } catch (error) {
@@ -125,6 +128,8 @@ export function ThemesColumn() {
       // Close modal even on error
       setDeleteModalOpened(false);
       setThemeToDelete(null);
+    } finally {
+      setIsDeleting(false);
     }
   };
 
@@ -226,35 +231,17 @@ export function ThemesColumn() {
       </Stack>
 
       {/* Delete Confirmation Modal */}
-      <Modal
+      <ConfirmDeleteModal
         opened={deleteModalOpened}
         onClose={() => {
           setDeleteModalOpened(false);
           setThemeToDelete(null);
         }}
+        onConfirm={handleConfirmDelete}
         title="Delete Theme"
-        centered
-      >
-        <Stack gap="md">
-          <Text>
-            Are you sure you want to delete this theme? This action cannot be undone.
-          </Text>
-          <Group justify="flex-end" mt="md">
-            <Button
-              variant="subtle"
-              onClick={() => {
-                setDeleteModalOpened(false);
-                setThemeToDelete(null);
-              }}
-            >
-              Cancel
-            </Button>
-            <Button color="red" onClick={handleConfirmDelete}>
-              Delete
-            </Button>
-          </Group>
-        </Stack>
-      </Modal>
+        message="Are you sure you want to delete this theme? This action cannot be undone."
+        isDeleting={isDeleting}
+      />
 
       {/* Create/Edit Modal */}
       <Modal

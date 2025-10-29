@@ -144,6 +144,10 @@ export const useLifeOSStore = create<LifeOSState>((set, get) => ({
       // Only update UI after successful deletion
       set((state) => ({
         pillars: state.pillars.filter((p) => p.id !== id),
+        // Clear selection if the deleted pillar was selected
+        selectedPillarId: state.selectedPillarId === id ? null : state.selectedPillarId,
+        // Clear theme selections when pillar is deleted
+        selectedThemeIds: state.selectedPillarId === id ? [] : state.selectedThemeIds,
         isSyncing: false,
       }));
     } catch (error) {
@@ -234,29 +238,28 @@ export const useLifeOSStore = create<LifeOSState>((set, get) => ({
   },
 
   deleteTheme: async (id) => {
-    const previousThemes = get().themes;
-    const theme = previousThemes.find((t) => t.id === id);
-    
+    const theme = get().themes.find((t) => t.id === id);
+
     try {
       set({ isSyncing: true, error: null });
-      // Optimistic update
+
+      // API call first (no optimistic update to avoid glitchy rollback)
+      await themesAPI.delete(id);
+
+      // Only update UI after successful deletion
       set((state) => ({
         themes: state.themes.filter((t) => t.id !== id),
+        // Remove from selection if the deleted theme was selected
+        selectedThemeIds: state.selectedThemeIds.filter((themeId) => themeId !== id),
+        isSyncing: false,
       }));
 
-      // API call
-      await themesAPI.delete(id);
-      
-      set({ isSyncing: false });
-      
       // Recalculate pillar rating
       if (theme) {
         get().recalculatePillarRating(theme.pillarId);
       }
     } catch (error) {
-      // Rollback
       set({
-        themes: previousThemes,
         error: error instanceof APIError ? error.message : 'Failed to delete theme',
         isSyncing: false,
       });

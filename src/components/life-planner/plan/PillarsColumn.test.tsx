@@ -26,7 +26,7 @@ describe('PillarsColumn', () => {
     selectPillar: vi.fn(),
     addPillar: vi.fn(),
     updatePillar: vi.fn(),
-    removePillar: vi.fn(),
+    deletePillar: vi.fn(),
   };
 
   beforeEach(() => {
@@ -258,30 +258,30 @@ describe('PillarsColumn', () => {
 
     it('deletes pillar when confirmed', async () => {
       const user = userEvent.setup();
-      mockStore.removePillar.mockResolvedValueOnce(undefined);
-      
+      mockStore.deletePillar.mockResolvedValueOnce(undefined);
+
       render(<PillarsColumn />);
-      
+
       const deleteButtons = screen.getAllByLabelText(/delete/i);
       await user.click(deleteButtons[0]);
-      
+
       await user.click(screen.getByRole('button', { name: /confirm/i }));
-      
+
       await waitFor(() => {
-        expect(mockStore.removePillar).toHaveBeenCalledWith('p1');
+        expect(mockStore.deletePillar).toHaveBeenCalledWith('p1');
       });
     });
 
     it('does not delete when cancelled', async () => {
       const user = userEvent.setup();
       render(<PillarsColumn />);
-      
+
       const deleteButtons = screen.getAllByLabelText(/delete/i);
       await user.click(deleteButtons[0]);
-      
+
       await user.click(screen.getByRole('button', { name: /cancel/i }));
-      
-      expect(mockStore.removePillar).not.toHaveBeenCalled();
+
+      expect(mockStore.deletePillar).not.toHaveBeenCalled();
     });
   });
 
